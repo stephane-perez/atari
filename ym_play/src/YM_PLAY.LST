@@ -1,0 +1,253 @@
+'
+' YM PLAYER by The Beast/Typhoon (St俻hane Perez)
+' ---------
+'
+' Fastly coded in GFA Basic 3.5
+'
+' WHAT IS NOT PLAYED :
+' -> Musics packed with LHA (PLEASE pack them with Speed or Ice Packer !)
+' -> All "YM6!" tunes ("YM6!" format is played like "YM5!")
+' -> Non-interleaved musics (very rare)
+' -> SID-voice(s)
+' -> Digidrums
+'
+' *************** Freeware! ***************
+'  Distribute this freely but tell me if
+'  you are programming a new player using
+'  this source: thebeast@caramail.com
+'  or thebeast@rtel.fr
+' *****************************************
+' Warning: the "newbload" routine is (c)
+' by STGhost/Sector One
+' *****************************************
+'
+' This is version 0.3 from June 19th 1998
+'
+' ~XBIOS(31,0,7,245,L:adresse%) : always play the music at 50 Hz
+'
+CLS
+INLINE newbload%,3036
+ALERT 1,"YM-PLAYER v0.3| |Please select an|YM file to play.",1,"  OK  ",b|
+'
+SPOKE &H484,PEEK(&H484) AND NOT 1       ! Cut key click
+'
+FILESELECT "G:\TEMP\*.*","",name$
+IF name$<>"" AND EXIST(name$)
+  OPEN "i",#1,name$
+  fic_stg$=name$+CHR$(0)
+  LONG{newbload%+28}=V:fic_stg$     ! path and file name
+  ~C:newbload%()                    ! calculate the lenght
+  ym_size%=LONG{newbload%+32}       ! lenght of file after unpacking
+  IF ym_size%<(FRE(0)-20000)
+    DIM buffer|(ym_size%)
+    buffer%=V:buffer|(0)
+    LONG{newbload%+32}=buffer%      ! loading address
+    lodepack%=newbload%+2           ! address for the code
+    ~C:lodepack%()                  ! load and unpack
+    '
+    FOR i%=0 TO 3                 ! header = 4 bytes
+      head$=CHR$(BYTE{buffer%+i%})
+      header$=header$+head$
+    NEXT i%
+    '
+    ' Global variables
+    '
+    interleave!=TRUE    ! most of the YM have interleaved format block
+    restart!=FALSE
+    CLR info_song$,info_author$,comment$
+    '
+    @check_header
+    @display
+    IF PEEK(&HFFFFFC02)<>1
+      IF interleave!=TRUE
+        @play_interleave
+      ELSE
+        @play_non_interleave
+      ENDIF
+    ENDIF
+    '
+    ERASE buffer|()
+  ELSE
+    ALERT 3," |Not enough memory!",1," Shit! ",b|
+  ENDIF
+  CLOSE #1
+ENDIF
+@cutvoices
+SPOKE &H484,PEEK(&H484) OR 1    ! Restore key click
+'
+~XBIOS(28,&X11000000,135)       ! Enables the ports A and B anew
+'                               ! (sometimes the floppy disk is "disabled" !)
+'
+REPEAT
+UNTIL INKEY$=""
+SHOWM                           ! The return of the mouse
+OUT 4,8
+CLS
+EDIT                            ! See ya, dudez!
+'
+> PROCEDURE check_header
+  SELECT header$      ! Each format is quite different
+  CASE "YM2!","YM3!"
+    nvbl%=(ym_size%-4)/14
+    pointeur%=buffer%+4           ! Music start just after the header
+    info_song$="non available"
+    info_author$="non available"
+    comment$="non available"
+  CASE "YM3b"
+    nvbl%=(ym_size%-8)/14
+    restart%=LONG{buffer%+(ym_size%-2)}
+    restart!=TRUE
+    pointeur%=buffer%+4           ! Music start just after the header
+    info_song$="non available"
+    info_author$="non available"
+    comment$="non available"
+  CASE "YM4!"
+    nvbl%=LONG{buffer%+12}
+    IF BTST(LONG{buffer%+16},0)=0
+      interleave!=FALSE       ! Is it interleave format or not ?
+    ENDIF
+    nb_digi&=LONG{buffer%+20} ! Number of digidrum samples
+    next%=buffer%+28
+    ' Digidrums aren't taken into consideration
+    IF nb_digi&<>0
+      FOR i&=1 TO nb_digi&
+        size%=LONG{next%}
+        next%=next%+size%+4
+      NEXT i&
+    ENDIF
+    ' Name of the song
+    i%=0
+    REPEAT
+      inf$=CHR$(BYTE{next%})
+      info_song$=info_song$+inf$
+      INC next%
+    UNTIL inf$=CHR$(0)
+    IF LEN(info_song$)<=1
+      info_song$="non available"
+    ENDIF
+    ' Name of the author
+    i%=0
+    REPEAT
+      inf$=CHR$(BYTE{next%})
+      info_author$=info_author$+inf$
+      INC next%
+    UNTIL inf$=CHR$(0)
+    IF LEN(info_author$)<=1
+      info_author$="non available"
+    ENDIF
+    ' Comments
+    i%=0
+    REPEAT
+      inf$=CHR$(BYTE{next%})
+      comment$=comment$+inf$
+      INC next%
+    UNTIL inf$=CHR$(0)
+    IF LEN(comment$)<=1
+      comment$="non available"
+    ENDIF
+    '
+    pointeur%=next%
+    restart%=pointeur%+LONG{buffer%+24}
+    restart!=TRUE
+  CASE "YM5!","YM6!"
+    nvbl%=LONG{buffer%+12}
+    IF BTST(LONG{buffer%+16},0)=0
+      interleave!=FALSE       ! Is it interleave format or not ?
+    ENDIF
+    nb_digi&=CARD{buffer%+20} ! Number of digidrum samples
+    next%=buffer%+34
+    ' Digidrums aren't taken into consideration
+    IF nb_digi&<>0
+      FOR i&=1 TO nb_digi&
+        size%=LONG{next%}
+        next%=next%+size%+4
+      NEXT i&
+    ENDIF
+    ' Name of the song
+    i%=0
+    REPEAT
+      inf$=CHR$(BYTE{next%})
+      info_song$=info_song$+inf$
+      INC next%
+    UNTIL inf$=CHR$(0)
+    IF LEN(info_song$)<=1
+      info_song$="non available"
+    ENDIF
+    ' Name of the author
+    i%=0
+    REPEAT
+      inf$=CHR$(BYTE{next%})
+      info_author$=info_author$+inf$
+      INC next%
+    UNTIL inf$=CHR$(0)
+    IF LEN(info_author$)<=1
+      info_author$="non available"
+    ENDIF
+    ' Comments
+    i%=0
+    REPEAT
+      inf$=CHR$(BYTE{next%})
+      comment$=comment$+inf$
+      INC next%
+    UNTIL inf$=CHR$(0)
+    IF LEN(comment$)<=1
+      comment$="non available"
+    ENDIF
+    '
+    pointeur%=next%
+    restart%=pointeur%+LONG{buffer%+28}
+    restart!=TRUE
+  ENDSELECT
+RETURN
+> PROCEDURE display
+  CLS
+  PRINT "YM-PLAYER 0.3 by The Beast/Typhoon"
+  PRINT "构构构构构构构构构构构构构构构构构"
+  PRINT "File name     : ";name$
+  PRINT "File lenght   : ";ym_size%
+  PRINT "Number of VBL : ";nvbl%
+  PRINT "File header   : ";header$
+  PRINT
+  PRINT "Song     : ";info_song$
+  PRINT "Author   : ";info_author$
+  PRINT "Comments : ";comment$
+  PRINT AT(1,12);"-Press any key to start or ESC to exit-"
+  ~INP(2)
+  PRINT AT(1,12);"-Press ESC to stop the music and exit- "
+  '
+  OUT 4,18              ! If I keep the mouse active, the
+  HIDEM                 ! music stops when the mouse moves !  8-)
+RETURN
+PROCEDURE play_interleave
+  REPEAT
+    FOR i%=0 TO nvbl%-1
+      FOR j%=0 TO 13
+        ' We must select the right data within the file
+        donnee|=BYTE{pointeur%+i%+(j%*nvbl%)}
+        ' There is sometimes a problem with the 13th register of the YM
+        IF j%=13 AND donnee|=&HFF
+        ELSE
+          SPOKE &HFFFF8800,j%
+          SPOKE &HFFFF8802,donnee|
+          '          ~XBIOS(28,donnee|,128+j%)
+        ENDIF
+      NEXT j%
+      VSYNC
+      EXIT IF PEEK(&HFFFFFC02)=1
+    NEXT i%
+    ' Check if the music can loop
+    IF restart!
+      pointeur%=restart%
+    ENDIF
+  UNTIL PEEK(&HFFFFFC02)=1
+RETURN
+> PROCEDURE play_non_interleave
+  ALERT 2,"-> I can't play|non interleaved musics|for the moment!",1," Stop ",b&
+RETURN
+> PROCEDURE cutvoices
+  SLPOKE &H4D2,0
+  SLPOKE &HFFFF8800,&H8080000
+  SLPOKE &HFFFF8800,&H9090000
+  SLPOKE &HFFFF8800,&HA0A0000
+  SPOKE &H484,2
+RETURN

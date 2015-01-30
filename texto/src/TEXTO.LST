@@ -1,0 +1,3681 @@
+' +----------------------------------+
+' |                                  |
+' |              Texto!              |
+' |              ------              |
+' |                                  |
+' | Ω 1997-2002 par StÇphane Perez   |
+' | Version 2.1                      |
+' | Le 11/09/2002                    |
+' |                                  |
+' +----------------------------------+
+' Avant de compiler, changer EDIT en QUIT
+' Mise Ö jour : - @load_option et @save_option : changer numÇro version
+'
+$m128000
+compiled!=BYTE{BASEPAGE+256}<>96
+IF NOT compiled!
+  RESERVE 128000
+ENDIF
+'
+INLINE faceval_sys%,2882
+'
+IF NOT compiled!
+  CHDRIVE "G"
+  CHDIR "\UTILS.GFA\TEXTO\"
+  IF BYTE{SUCC(faceval_sys%)}=0
+    BLOAD "fv_sys.inl",faceval_sys%
+  ENDIF
+ENDIF
+'
+ON BREAK GOSUB system_restore
+ON ERROR GOSUB system_restore
+'
+' **********
+program_path$=CHR$(65+GEMDOS(25))+":"+DIR$(0)+"\"
+html_xvide_var$="<p>&nbsp;</p>"
+IF EXIST(program_path$+"TEXTO.INF")
+  @load_options(program_path$+"TEXTO.INF")
+ENDIF
+' **********
+@start_up
+'
+> PROCEDURE system_restore        !This proc. can be deleted before compiling
+  LOCAL d&
+  ALERT 1,"Erreur: "+STR$(ERR)+" |"+MID$(ERR$(ERR),3,INSTR(ERR$(ERR),"Return")-3),1,"  OK  ",d&
+  IF fv_malloced%>0
+    ~MFREE(fv_malloced%)
+  ENDIF
+  IF fv_malloced2%>0
+    ~MFREE(fv_malloced2%)
+  ENDIF
+  @win_close_all
+  ~WIND_UPDATE(1)
+  ~MENU_BAR(menubar_adress%,0)
+  ~WIND_UPDATE(0)
+  @user_on_exit
+  ~WIND_SET(0,14,0,0,0,0)
+  @v_clsvwk(flydials_handle&)
+  ~MFREE(system_pool%)
+  @cleanup_after_rsc
+  IF INT{{ADD(GB,4)}}>=&H320  !AES>3.20
+    GCONTRL(0)=109            !wind_new()
+    GCONTRL(1)=0
+    GCONTRL(2)=0
+    GCONTRL(3)=0
+    GCONTRL(4)=0
+    GEMSYS
+  ENDIF
+  CLOSE
+  ~APPL_EXIT()
+  RESERVE
+  EDIT
+RETURN
+'
+' ------------------------------------------------------------------------
+' PUT YOUR OWN ROUTINES HERE:
+'
+> PROCEDURE prepare_html
+  IF num&<>0
+    IF num&=1
+      fichier_source$=fichier_tampon$
+      c_path$=@calc_chemin$(fichier_source$)
+      c_file$=@calc_nomfichier$(fichier_source$)
+      c_real$=@calc_nomfichiercomplet$(fichier_source$)
+      fichier_dest$=@fileselector$(txt_save$,c_path$+"*.HTM",c_file$+".HTM",0)
+      IF fichier_dest$<>""
+        IF EXIST(fichier_dest$)
+          ALERT 2,ecrase$,1,oui_non$,temp|
+          IF temp|=1
+            @convert_ascii_html(fichier_source$,fichier_dest$)
+          ENDIF
+        ELSE
+          @convert_ascii_html(fichier_source$,fichier_dest$)
+        ENDIF
+      ENDIF
+    ELSE
+      @prepare_commun(1,"*.HTM")
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE prepare_stpc
+  IF num&<>0
+    IF num&=1
+      fichier_source$=fichier_tampon$
+      c_path$=@calc_chemin$(fichier_source$)
+      c_file$=@calc_nomfichier$(fichier_source$)
+      c_real$=@calc_nomfichiercomplet$(fichier_source$)
+      fichier_dest$=@fileselector$(txt_save$,c_path$+"*.*",c_real$,0)
+      IF fichier_dest$<>""
+        IF EXIST(fichier_dest$)
+          ALERT 2,ecrase$,1,oui_non$,temp|
+          IF temp|=1
+            @convert_ascii_w95(fichier_source$,fichier_dest$)
+          ENDIF
+        ELSE
+          @convert_ascii_w95(fichier_source$,fichier_dest$)
+        ENDIF
+      ENDIF
+    ELSE
+      @prepare_commun(2,"*.*")
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE prepare_pcst
+  IF num&<>0
+    IF num&=1
+      fichier_source$=fichier_tampon$
+      c_path$=@calc_chemin$(fichier_source$)
+      c_file$=@calc_nomfichier$(fichier_source$)
+      c_real$=@calc_nomfichiercomplet$(fichier_source$)
+      fichier_dest$=@fileselector$(txt_save$,c_path$+"*.*",c_real$,0)
+      IF fichier_dest$<>""
+        IF EXIST(fichier_dest$)
+          ALERT 2,ecrase$,1,oui_non$,temp|
+          IF temp|=1
+            @convert_w95_ascii(fichier_source$,fichier_dest$)
+          ENDIF
+        ELSE
+          @convert_w95_ascii(fichier_source$,fichier_dest$)
+        ENDIF
+      ENDIF
+    ELSE
+      @prepare_commun(3,"*.*")
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE prepare_accents
+  IF num&<>0
+    IF num&=1
+      fichier_source$=fichier_tampon$
+      c_path$=@calc_chemin$(fichier_source$)
+      c_file$=@calc_nomfichier$(fichier_source$)
+      c_real$=@calc_nomfichiercomplet$(fichier_source$)
+      fichier_dest$=@fileselector$(txt_save$,c_path$+"*.*",c_real$,0)
+      IF fichier_dest$<>""
+        IF EXIST(fichier_dest$)
+          ALERT 2,ecrase$,1,oui_non$,temp|
+          IF temp|=1
+            @convert_accents(fichier_source$,fichier_dest$)
+          ENDIF
+        ELSE
+          @convert_accents(fichier_source$,fichier_dest$)
+        ENDIF
+      ENDIF
+    ELSE
+      @prepare_commun(4,"*.*")
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE prepare_commun(type|,file_ext$)
+  LOCAL i&,j&,renomme$
+  i&=1
+  j&=INSTR(fichier_tampon$,CHR$(0),i&)
+  renomme$=""
+  c_path$=LEFT$(fichier_tampon$,j&-1)
+  chemin_dest$=@fileselector$(txt_save$,c_path$+file_ext$,"",TRUE)
+  IF chemin_dest$<>""
+    ADD j&,1
+    i&=j&
+    WHILE i&<LEN(fichier_tampon$)
+      IF MID$(fichier_tampon$,i&,1)=CHR$(0)
+        fichier_source$=c_path$+MID$(fichier_tampon$,j&,i&-j&)
+        c_real$=@calc_nomfichiercomplet$(fichier_source$)
+        IF type|=1
+          fichier_dest$=chemin_dest$+@calc_nomfichier$(fichier_source$)+".HTM"
+        ELSE
+          fichier_dest$=chemin_dest$+c_real$
+        ENDIF
+        IF EXIST(fichier_dest$)
+          ALERT 2,"|"+@calc_nomfichiercomplet$(fichier_dest$)+ecrase$,1,oui_renommer_non$,temp|
+          IF temp|=1            ! Ecraser
+            @selection_conversion(type|)
+          ELSE IF temp|=2       ! Renommer
+            REPEAT
+              renomme$=@fileselector$(txt_save$,c_path$+file_ext$,"",FALSE)
+            UNTIL (NOT EXIST(renomme$)) AND (renomme$<>fichier_source$)
+            IF renomme$<>""
+              fichier_dest$=renomme$
+              @selection_conversion(type|)
+            ENDIF
+          ENDIF
+        ELSE
+          @selection_conversion(type|)
+        ENDIF
+        j&=i&+1
+      ENDIF
+      ADD i&,1
+    WEND
+  ENDIF
+RETURN
+> PROCEDURE selection_conversion(type|)
+  SELECT type|
+  CASE 1
+    @convert_ascii_html(fichier_source$,fichier_dest$)
+  CASE 2
+    @convert_ascii_w95(fichier_source$,fichier_dest$)
+  CASE 3
+    @convert_w95_ascii(fichier_source$,fichier_dest$)
+  CASE 4
+    @convert_accents(fichier_source$,fichier_dest$)
+  ENDSELECT
+RETURN
+'
+' Fonctions pour dÇcouper un nom de fichier avec son chemin
+'
+> FUNCTION calc_lecteur$(f$)              ! c_drive$
+  LOCAL temp$
+  IF MID$(f$,2,1)=":"
+    temp$=LEFT$(f$,2)
+  ELSE
+    temp$=""
+  ENDIF
+  RETURN temp$
+ENDFUNC
+> FUNCTION calc_chemin$(f$)               ! c_path$
+  LOCAL slash&,temp$
+  slash&=RINSTR(f$,"\")
+  temp$=LEFT$(f$,slash&)
+  IF slash&>0
+    temp$=MID$(temp$,3)
+  ENDIF
+  RETURN @calc_lecteur$(f$)+temp$
+ENDFUNC
+> FUNCTION calc_nomfichiercomplet$(f$)    ! c_real$
+  LOCAL slash&
+  slash&=RINSTR(f$,"\")
+  IF slash&=0
+    RETURN f$
+  ELSE
+    RETURN MID$(f$,SUCC(slash&))
+  ENDIF
+ENDFUNC
+> FUNCTION calc_nomfichier$(f$)           ! c_file$
+  LOCAL temp$,point&
+  temp$=@calc_nomfichiercomplet$(f$)
+  point&=RINSTR(temp$,".")
+  IF point&>0
+    RETURN LEFT$(temp$,PRED(point&))
+  ELSE
+    RETURN temp$
+  ENDIF
+ENDFUNC
+> FUNCTION calc_extension$(f$)            ! c_ext$
+  LOCAL temp$
+  temp$=@calc_nomfichiercomplet$(f$)
+  RETURN MID$(temp$,SUCC(RINSTR(temp$,".")))
+ENDFUNC
+'
+' Convertisseurs
+'
+> PROCEDURE convert_ascii_html(f1$,f2$)
+  LOCAL i&,j&
+  '
+  temps_total_debut%=TIMER
+  '
+  ERASE tableau$()
+  DIM tableau$(5000)
+  OPEN "i",#1,f1$
+  RECALL #1,tableau$(),5000,vrai_nb%
+  @bug_remover
+  CLOSE #1
+  '
+  temps_conv_debut%=TIMER
+  '
+  FOR j&=0 TO vrai_nb%
+    ligne$=tableau$(j&)
+    dest$=""
+    souvenir!=FALSE
+    IF LEFT$(ligne$,1)="-"
+      IF html_enumerer_var!
+        souvenir!=TRUE
+      ENDIF
+    ENDIF
+    FOR i&=1 TO LEN(ligne$)
+      car$=MID$(ligne$,i&,1)
+      IF html_et_var!
+        @ampersand
+      ENDIF
+      IF html_tags_var!
+        @commande
+      ENDIF
+      IF html_guillemets_var!
+        @quote
+      ENDIF
+      IF ASC(car$)>127
+        IF html_accents_var!
+          @accents
+        ENDIF
+        IF html_grec_var!
+          @grec
+        ENDIF
+        IF html_speciaux_var!
+          @special
+        ENDIF
+      ENDIF
+      dest$=dest$+car$
+    NEXT i&
+    IF souvenir!
+      dest$=dest$+"<BR>"
+      souvenir!=FALSE
+    ENDIF
+    IF ligne$=""
+      IF html_vide_var!
+        dest$=dest$+html_xvide_var$
+      ENDIF
+    ENDIF
+    tableau$(j&)=dest$
+  NEXT j&
+  '
+  temps_conv_fin%=TIMER
+  '
+  OPEN "o",#2,f2$
+  IF html_en_tete_var!
+    PRINT #2,"<HTML>"
+    PRINT #2,"<HEAD>"
+    PRINT #2,marque1$
+    PRINT #2,marque2$
+    IF html_auteur_var!
+      PRINT #2,"<META HTTP-EQUIV="+CHR$(34)+"Author"+CHR$(34)+" CONTENT="+CHR$(34)+html_xauteur_var$+CHR$(34)+">"
+    ENDIF
+    IF html_titre_var!
+      PRINT #2,"<TITLE>"+html_xtitre_var$+"</TITLE>"
+    ELSE
+      PRINT #2,"<TITLE></TITLE>"
+    ENDIF
+    PRINT #2,"</HEAD>"
+    PRINT #2,"<BODY TEXT="+CHR$(34)+"#000000"+CHR$(34)+" BGCOLOR="+CHR$(34)+"#FFFFFF"+CHR$(34)+" LINK="+CHR$(34)+"#0000FF"+CHR$(34)+" VLINK="+CHR$(34)+"#000099"+CHR$(34)+" ALINK="+CHR$(34)+"#000099"+CHR$(34)+">"
+    PRINT #2,""
+  ENDIF
+  STORE #2,tableau$(),vrai_nb%
+  IF html_en_tete_var!
+    PRINT #2,"</BODY>"
+    PRINT #2,"</HTML>"
+  ENDIF
+  CLOSE #2
+  @time
+RETURN
+> PROCEDURE convert_ascii_w95(f1$,f2$)
+  LOCAL i&,j&
+  '
+  temps_total_debut%=TIMER
+  '
+  ERASE tableau$()
+  DIM tableau$(5000)
+  OPEN "i",#1,f1$
+  RECALL #1,tableau$(),5000,vrai_nb%
+  @bug_remover
+  CLOSE #1
+  '
+  temps_conv_debut%=TIMER
+  '
+  FOR j&=0 TO vrai_nb%
+    ligne$=tableau$(j&)
+    dest$=""
+    FOR i&=1 TO LEN(ligne$)
+      car$=MID$(ligne$,i&,1)
+      '
+      IF ASC(car$)=>128
+        RESTORE st2pc
+        FOR lettre&=128 TO 255
+          READ wsource$,wdest$
+          IF car$=wsource$
+            ncar$=wdest$
+          ENDIF
+        NEXT lettre&
+        car$=ncar$
+      ENDIF
+      '
+      dest$=dest$+car$
+    NEXT i&
+    tableau$(j&)=dest$
+  NEXT j&
+  '
+  temps_conv_fin%=TIMER
+  '
+  OPEN "o",#2,f2$
+  STORE #2,tableau$(),vrai_nb%
+  CLOSE #2
+  '
+  @time
+RETURN
+> PROCEDURE convert_w95_ascii(f1$,f2$)
+  LOCAL i&,j&
+  '
+  temps_total_debut%=TIMER
+  '
+  ERASE tableau$()
+  DIM tableau$(5000)
+  OPEN "i",#1,f1$
+  RECALL #1,tableau$(),5000,vrai_nb%
+  @bug_remover
+  CLOSE #1
+  '
+  temps_conv_debut%=TIMER
+  '
+  FOR j&=0 TO vrai_nb%
+    ligne$=tableau$(j&)
+    dest$=""
+    FOR i&=1 TO LEN(ligne$)
+      car$=MID$(ligne$,i&,1)
+      '
+      IF ASC(car$)=>128
+        RESTORE st2pc
+        FOR lettre&=128 TO 255
+          READ wsource$,wdest$
+          IF car$=wdest$
+            ncar$=wsource$
+          ENDIF
+        NEXT lettre&
+        car$=ncar$
+      ENDIF
+      '
+      dest$=dest$+car$
+    NEXT i&
+    tableau$(j&)=dest$
+  NEXT j&
+  '
+  temps_conv_fin%=TIMER
+  '
+  OPEN "o",#2,f2$
+  STORE #2,tableau$(),vrai_nb%
+  CLOSE #2
+  '
+  @time
+RETURN
+> PROCEDURE convert_accents(f1$,f2$)
+  LOCAL i&,j&
+  '
+  temps_total_debut%=TIMER
+  '
+  ERASE tableau$()
+  DIM tableau$(5000)
+  OPEN "i",#1,f1$
+  RECALL #1,tableau$(),5000,vrai_nb%
+  @bug_remover
+  CLOSE #1
+  '
+  temps_conv_debut%=TIMER
+  '
+  FOR j&=0 TO vrai_nb%
+    ligne$=tableau$(j&)
+    dest$=""
+    FOR i&=1 TO LEN(ligne$)
+      car$=MID$(ligne$,i&,1)
+      IF ASC(car$)=>128
+        SELECT car$
+        CASE "Ö"
+          car$="a"
+        CASE "∂"
+          car$="A"
+        CASE "Ü"
+          car$="a"
+        CASE "è"
+          car$="A"
+        CASE "†"
+          car$="a"
+        CASE "É"
+          car$="a"
+        CASE "Ñ"
+          car$="a"
+        CASE "é"
+          car$="A"
+        CASE "∞"
+          car$="a"
+        CASE "∑"
+          car$="A"
+        CASE "ë"
+          car$="ae"
+        CASE "í"
+          car$="AE"
+          ' E
+        CASE "Ç"
+          car$="e"
+        CASE "ê"
+          car$="E"
+        CASE "ä"
+          car$="e"
+        CASE "à"
+          car$="e"
+        CASE "â"
+          car$="e"
+          ' I
+        CASE "å"
+          car$="i"
+        CASE "ã"
+          car$="i"
+        CASE "°"
+          car$="i"
+        CASE "ç"
+          car$="i"
+          ' O
+        CASE "ì"
+          car$="o"
+        CASE "î"
+          car$="o"
+        CASE "ô"
+          car$="O"
+        CASE "¢"
+          car$="o"
+        CASE "ï"
+          car$="o"
+        CASE "±"
+          car$="o"
+        CASE "∏"
+          car$="O"
+        CASE "≤"
+          car$="o"
+        CASE "≥"
+          car$="o"
+        CASE "¥"
+          car$="oe"
+        CASE "µ"
+          car$="OE"
+          ' U
+        CASE "ñ"
+          car$="u"
+        CASE "Å"
+          car$="u"
+        CASE "ö"
+          car$="U"
+        CASE "£"
+          car$="u"
+        CASE "ó"
+          car$="u"
+          ' Y
+        CASE "ò"
+          car$="y"
+          ' CÇdille
+        CASE "á"
+          car$="c"
+        CASE "Ä"
+          car$="c"
+          ' N TildÇ
+        CASE "§"
+          car$="n"
+        CASE "•"
+          car$="N"
+        ENDSELECT
+      ENDIF
+      '
+      dest$=dest$+car$
+    NEXT i&
+    tableau$(j&)=dest$
+  NEXT j&
+  '
+  temps_conv_fin%=TIMER
+  '
+  OPEN "o",#2,f2$
+  STORE #2,tableau$(),vrai_nb%
+  CLOSE #2
+  '
+  @time
+RETURN
+> PROCEDURE bug_remover
+  bug$=SPACE$(1)
+  SEEK #1,LOF(#1)-1
+  BGET #1,V:bug$,1
+  CLOSE #1
+  IF ASC(bug$)<>10
+    IF ASC(bug$)<>13
+      INC vrai_nb%
+    ENDIF
+  ENDIF
+  CLR bug$
+RETURN
+> PROCEDURE time
+  IF opti_chrono_var!
+    temps_conv%=(temps_conv_fin%-temps_conv_debut%)/200
+    ~FORM_ALERT(1,"[0][ |"+ligne1$+ligne2$+STR$(temps_conv%)+" sec. |][   OK   ]")
+  ENDIF
+RETURN
+'
+' ProcÇdures de conversion pour HTML
+'
+> PROCEDURE accents
+  SELECT car$
+    ' A
+  CASE "Ö"
+    car$="&agrave;"
+  CASE "∂"
+    car$="&Agrave;"
+  CASE "Ü"
+    car$="&aring;"
+  CASE "è"
+    car$="&Aring;"
+  CASE "†"
+    car$="&aacute;"
+  CASE "É"
+    car$="&acirc;"
+  CASE "Ñ"
+    car$="&auml;"
+  CASE "é"
+    car$="&Auml;"
+  CASE "∞"
+    car$="&atilde;"
+  CASE "∑"
+    car$="&Atilde;"
+  CASE "ë"
+    car$="&aelig;"
+  CASE "í"
+    car$="&AElig;"
+    ' E
+  CASE "Ç"
+    car$="&eacute;"
+  CASE "ê"
+    car$="&Eacute;"
+  CASE "ä"
+    car$="&egrave;"
+  CASE "à"
+    car$="&ecirc;"
+  CASE "â"
+    car$="&euml;"
+    ' I
+  CASE "å"
+    car$="&icirc;"
+  CASE "ã"
+    car$="&iuml;"
+  CASE "°"
+    car$="&iacute;"
+  CASE "ç"
+    car$="&igrave;"
+    ' O
+  CASE "ì"
+    car$="&ocirc;"
+  CASE "î"
+    car$="&ouml;"
+  CASE "ô"
+    car$="&Ouml;"
+  CASE "¢"
+    car$="&oacute;"
+  CASE "ï"
+    car$="&ograve;"
+  CASE "±"
+    car$="&otilde;"
+  CASE "∏"
+    car$="&Otilde;"
+  CASE "≤"
+    car$="&Oslash;"
+  CASE "≥"
+    car$="&oslash;"
+  CASE "¥"
+    car$="oe"
+  CASE "µ"
+    car$="OE"
+    ' U
+  CASE "ñ"
+    car$="&ucirc;"
+  CASE "Å"
+    car$="&uuml;"
+  CASE "ö"
+    car$="&Uuml;"
+  CASE "£"
+    car$="&uacute;"
+  CASE "ó"
+    car$="&ugrave;"
+    ' Y
+  CASE "ò"
+    car$="&yuml;"
+    ' CÇdille
+  CASE "á"
+    car$="&ccedil;"
+  CASE "Ä"
+    car$="&Ccedil;"
+    ' N TildÇ
+  CASE "§"
+    car$="&ntilde;"
+  CASE "•"
+    car$="&Ntilde;"
+  ENDSELECT
+RETURN
+> PROCEDURE special
+  SELECT car$
+    ' Caractäres spÇciaux
+  CASE "~"
+    car$="&#126;"
+  CASE "≠"
+    car$="&#161;"
+  CASE "õ"
+    car$="&#162;"
+  CASE "ú"
+    car$="&#163;"
+  CASE "ù"
+    car$="&#165;"
+  CASE "|"
+    car$="&#166;"
+  CASE "›"
+    car$="&#167;"
+  CASE "π"
+    car$="&#168;"
+  CASE "Ω"
+    car$="&#169;"
+  CASE "æ"
+    car$="&#170;"
+  CASE "Æ"
+    car$="&#171;"
+  CASE "™"
+    car$="&#172;"
+  CASE "ˇ"
+    car$="&#175;"
+  CASE "¯"
+    car$="&#176;"
+  CASE "Ò"
+    car$="&#177;"
+  CASE "˝"
+    car$="&#178;"
+  CASE "˛"
+    car$="&#179;"
+  CASE "∫"
+    car$="&#180;"
+  CASE "Ê"
+    car$="&#181;"
+  CASE "º"
+    car$="&#182;"
+  CASE "˙"
+    car$="&#183;"
+  CASE "Ø"
+    car$="&#187;"
+  CASE "¨"
+    car$="&#188;"
+  CASE "´"
+    car$="&#189;"
+  CASE "®"
+    car$="&#191;"
+  CASE "û"
+    car$="&#223;"
+  CASE "ˆ"
+    car$="&#247;"
+    ' Caractäres spÇciaux ATARI
+  CASE "ü"
+    car$="f"
+  CASE "ø"
+    car$="(TM)"
+  CASE "¿"
+    car$="ij"
+  CASE "¡"
+    car$="IJ"
+  CASE "ﬁ"
+    car$="^"
+  ENDSELECT
+RETURN
+> PROCEDURE commande
+  IF car$="<"
+    car$="&lt;"
+  ELSE IF car$=">"
+    car$="&gt;"
+  ENDIF
+RETURN
+> PROCEDURE ampersand
+  IF car$="&"
+    car$="&amp;"
+  ENDIF
+RETURN
+> PROCEDURE quote
+  IF car$=CHR$(34)
+    car$="&quot;"
+  ENDIF
+RETURN
+> PROCEDURE grec
+  IF car$="‡"
+    car$="&alpha;"
+  ELSE IF car$="·"
+    car$="&beta;"
+  ELSE IF car$="‚"
+    car$="&Gamma;"
+  ELSE IF car$="„"
+    car$="&pi;"
+  ELSE IF car$="‰"
+    car$="&Sigma;"
+  ELSE IF car$="Â"
+    car$="&sigma;"
+  ELSE IF car$="Ê"
+    car$="&mu;"
+  ELSE IF car$="Á"
+    car$="&tau;"
+  ELSE IF car$="Ë"
+    car$="&Phi;"
+  ELSE IF car$="È"
+    car$="&theta;"
+  ELSE IF car$="Í"
+    car$="&Omega;"
+  ELSE IF car$="Î"
+    car$="&delta;"
+  ELSE IF car$=""
+    car$="&Delta;"
+  ENDIF
+RETURN
+'
+' Options
+'
+> PROCEDURE save_options
+  ' Le fichier doit dÇjÖ àtre ouvert
+  PRINT #1,"Texto!2"
+  PRINT #1,""
+  PRINT #1,opti_chrono_var!
+  PRINT #1,opti_autosave_var!
+  PRINT #1,html_en_tete_var!
+  PRINT #1,html_enumerer_var!
+  PRINT #1,html_accents_var!
+  PRINT #1,html_speciaux_var!
+  PRINT #1,html_grec_var!
+  PRINT #1,html_et_var!
+  PRINT #1,html_tags_var!
+  PRINT #1,html_guillemets_var!
+  PRINT #1,html_vide_var!
+  PRINT #1,html_auteur_var!
+  PRINT #1,html_titre_var!
+  PRINT #1,html_xauteur_var$
+  PRINT #1,html_xtitre_var$
+  PRINT #1,html_xvide_var$
+  CLOSE #1
+RETURN
+> PROCEDURE load_options(fichier_option$)
+  OPEN "i",#1,fichier_option$
+  INPUT #1,config$
+  IF config$="Texto!2"
+    INPUT #1,dummy$
+    INPUT #1,opti_chrono_var!
+    INPUT #1,opti_autosave_var!
+    INPUT #1,html_en_tete_var!
+    INPUT #1,html_enumerer_var!
+    INPUT #1,html_accents_var!
+    INPUT #1,html_speciaux_var!
+    INPUT #1,html_grec_var!
+    INPUT #1,html_et_var!
+    INPUT #1,html_tags_var!
+    INPUT #1,html_guillemets_var!
+    INPUT #1,html_vide_var!
+    INPUT #1,html_auteur_var!
+    INPUT #1,html_titre_var!
+    INPUT #1,html_xauteur_var$
+    INPUT #1,html_xtitre_var$
+    INPUT #1,html_xvide_var$
+  ELSE
+    IF LEFT$(config$,3)="TXO"
+      ALERT 3,chaine1$,1,"  OK  ",b|
+    ELSE
+      ALERT 3,chaine2$,1,"  OK  ",b|
+    ENDIF
+  ENDIF
+  CLOSE #1
+  CLR config$,format$,fichier_option$
+RETURN
+'
+' ------------------------------------------------------------------------
+'
+' PROCEDURES & FONCTIONS pour l'utilisateur
+'
+> PROCEDURE user_var_index
+  ' sortie_urgente!           : TRUE = on a annulÇ les conversions
+  ' num&                      : nombre de fichiers pour Selectric (IN/OUT)
+  ' fichier_dest$             : nom du fichier de destination
+  ' fichier_source$           : nom du fichier pour le traitement (boucle)
+  ' t_chemin$                 : le chemin fourni par Selectric (temporaire)
+  ' fichier_tampon$           : le(s) fichier(s) fournis par Selectric
+  ' fichier_option$           : le fichier pour les options
+  '
+  ' program_path$             : the path the program was launched from
+  ' ap_id&                    : application id
+  ' menu_id&                  : id for menu_register()
+  ' acc&                      : running as an accessory
+  ' exit_program!             : quits program when set to TRUE
+  ' forced_exit!              : system shutdown flag
+  ' menubar_adress%           : rsc adress of current menu bar
+  ' current_menubar&          : tree number of current menu bar
+  ' current_menutitle&        : menu title in @menu_selected,-1 if not in @menu_selected
+  ' compiled!                 : GFA: compiled
+  ' multitasking!             : multitasking OS
+  ' rsc_path_name$            : path & name of RSC-file (".\DATA\EX.RSC")
+  ' max_number_windows&       : maximum number of allowed windows
+  ' window_array_size&        : size of window_array&() elements per window
+  ' windowtree_array_size&    : size of window_tree%() elements per window
+  ' ARRAY window_array&(x,y)  : array for window/dialog info
+  ' ARRAY window_tree%(x,y)   : array for tree adresses/title/infoadress of windows
+  ' progress_handle&          : handle of progress indicator/0 if no indicator
+  ' menu_disabled!            : menu titles disabled for modal dialogs
+  ' no_w_topping!             : no window topping allowed while modal dialog
+  ' top_modal&                : the index of the top modal dialog, -1 if none
+  ' ARRAY message&()          : used in redrawing windows/calling ST-Guide
+  ' num_prgdef_objects&       : number of prgdef objects in RSC
+  ' flydials_handle&          : virtual workstation handle for GFA Flydials
+  ' last_tree&                : last object tree in RSC
+  ' system_pool%              : adress of system memory malloced for the interface
+  ' prgdef_adress%            : prgdef object memory adress
+  ' st_guide%                 : memory adress of 256 byte block for interfacing with ST-Guide
+  ' alert_result&             : button clicked in alert
+  ' return_value&             : the return value of the program
+  ' gem_through!              : flag for letting *all* GEM messages through to @user_gem_messages()
+  ' fv_malloced%              : variable used to keep track of memory allocation
+  ' fv_malloced2%             : variable used to keep track of memory allocation
+  ' no_rsc_found$             : alert string if the RSC connot be found
+  ' not_accessory$            : alert string if run as acc not allowed
+  ' systemcheck_alert$        : alert string it systemcheck is not ok
+  ' snap_windows!             : snap edge of window to word boundary (horisontal)
+  ' gdos_minimum&             : GDOS program requirement as set in FrontEnd
+  '
+  ' ---------------------------------------------------------------------------
+  ' OBJECT TREE NAMES:
+  ' system&                             :dialog
+  ' menu_bar&                           :menu
+  ' general&                            :dialog
+  ' about&                              :dialog
+  ' postcard&                           :dialog
+  ' options&                            :dialog
+  ' html&                               :dialog
+  ' strings&                            :dialog
+  ' fvt_alst&                           :dialog
+  ' fvt_asci&                           :dialog
+  ' ---------------------------------------------------------------------------
+  ' OBJECT NAMES:
+  ' menu_about&                         :object in tree menu_bar&
+  ' menu_principal&                     :object in tree menu_bar&
+  ' menu_header&                        :object in tree menu_bar&
+  ' menu_quitter&                       :object in tree menu_bar&
+  ' gene_asc2htm&                       :object in tree general&
+  ' gene_asc2win&                       :object in tree general&
+  ' gene_win2asc&                       :object in tree general&
+  ' gene_accents&                       :object in tree general&
+  ' gene_infos&                         :object in tree general&
+  ' gene_options&                       :object in tree general&
+  ' gene_quitter&                       :object in tree general&
+  ' abou_gopostcard&                    :object in tree about&
+  ' opti_html&                          :object in tree options&
+  ' opti_chrono&                        :object in tree options&
+  ' opti_autosave&                      :object in tree options&
+  ' opti_ok&                            :object in tree options&
+  ' opti_load&                          :object in tree options&
+  ' opti_annuler&                       :object in tree options&
+  ' opti_save&                          :object in tree options&
+  ' html_auteur&                        :object in tree html&
+  ' html_xauteur&                       :object in tree html&
+  ' html_titre&                         :object in tree html&
+  ' html_xtitre&                        :object in tree html&
+  ' html_vide&                          :object in tree html&
+  ' html_xvide&                         :object in tree html&
+  ' html_en_tete&                       :object in tree html&
+  ' html_enumerer&                      :object in tree html&
+  ' html_accents&                       :object in tree html&
+  ' html_speciaux&                      :object in tree html&
+  ' html_grec&                          :object in tree html&
+  ' html_et&                            :object in tree html&
+  ' html_tags&                          :object in tree html&
+  ' html_guillemets&                    :object in tree html&
+  ' html_ok&                            :object in tree html&
+  ' html_annuler&                       :object in tree html&
+  '
+  ' ---------------------------------------------------------------------------
+  ' YOUR VARIABLES: (see PROCEDURE user_rsc_var_init for details)
+  '
+  ' opti_chrono_var!                    :selectable in tree options&
+  ' opti_autosave_var!                  :selectable in tree options&
+  ' html_auteur_var!                    :selectable in tree html&
+  ' html_xauteur_var$                   :editable text in tree html&
+  ' html_titre_var!                     :selectable in tree html&
+  ' html_xtitre_var$                    :editable text in tree html&
+  ' html_vide_var!                      :selectable in tree html&
+  ' html_xvide_var$                     :editable text in tree html&
+  ' html_en_tete_var!                   :selectable in tree html&
+  ' html_enumerer_var!                  :selectable in tree html&
+  ' html_accents_var!                   :selectable in tree html&
+  ' html_speciaux_var!                  :selectable in tree html&
+  ' html_grec_var!                      :selectable in tree html&
+  ' html_et_var!                        :selectable in tree html&
+  ' html_tags_var!                      :selectable in tree html&
+  ' html_guillemets_var!                :selectable in tree html&
+  '
+  ' ---------------------------------------------------------------------------
+  ' WINDOW TYPES:
+  ' non_sizeable%
+  '
+RETURN
+> PROCEDURE variables
+  c_path$=program_path$
+  marque1$="<!--DOCTYPE HTML PUBLIC "+CHR$(34)+"-//W3C//DTD HTML 3.2//EN"+CHR$(34)+"-->"
+  marque2$="<META HTTP-EQUIV="+CHR$(34)+"Content-Type"+CHR$(34)+" CONTENT="+CHR$(34)+"text/html; charset=iso-8859-1"+CHR$(34)+">"
+  '
+  txt_load$=@rsc_get_text$(strings&,stri_01&)
+  txt_save$=@rsc_get_text$(strings&,stri_02&)
+  txt_dest$=@rsc_get_text$(strings&,stri_03&)
+  txt_exi$=@rsc_get_text$(strings&,stri_04&)
+  byebye$=@rsc_get_text$(strings&,stri_05&)
+  annule_conv$=@rsc_get_text$(strings&,stri_06&)
+  pref_load$=@rsc_get_text$(strings&,stri_07&)
+  pref_save$=@rsc_get_text$(strings&,stri_08&)
+  ecrase$=@rsc_get_text$(strings&,stri_09&)
+  oui_non$=@rsc_get_text$(strings&,stri_10&)
+  oui_renommer_non$=@rsc_get_text$(strings&,stri_11&)
+  LET chaine1$=@rsc_get_text$(strings&,stri_12&)
+  LET chaine2$=@rsc_get_text$(strings&,stri_13&)
+  ligne1$=@rsc_get_text$(strings&,stri_14&)
+  ligne2$=@rsc_get_text$(strings&,stri_15&)
+  '
+RETURN
+> PROCEDURE user_rsc_var_init
+  '
+  '  This is read ONCE, at startup, and the corresponding dialog objects
+  '  will be set accordingly.
+  '
+  @variables
+  une_seule_fois!=TRUE
+  current_menubar&=menu_bar&
+  '
+  ' snap_windows!=TRUE
+  '
+RETURN
+> PROCEDURE a_tester
+  LET opti_chrono_var!=opti_chr_var!
+  LET opti_autosave_var!=opti_aut_var!
+  LET html_auteur_var!=html_aut_var!
+  LET html_titre_var!=html_tit_var!
+  LET html_vide_var!=html_vid_var!
+  LET html_en_tete_var!=html_en__var!
+  LET html_enumerer_var!=html_enu_var!
+  LET html_accents_var!=html_acc_var!
+  LET html_speciaux_var!=html_spe_var!
+  LET html_grec_var!=html_gre_var!
+  LET html_et_var!=html_amp_var!
+  LET html_tags_var!=html_tag_var!
+  LET html_guillemets_var!=html_gui_var!
+  LET html_xauteur_var$=html_xau_var$
+  LET html_xtitre_var$=html_xti_var$
+  LET html_xvide_var$=html_xvi_var$
+RETURN
+> PROCEDURE user_rsc_interact(index&,tree&,object&,mc&,sub_me&)
+  '
+  '  <index&> is the index of this window in window_array&(index&,x)
+  '           If the object tree is the normal menu bar, <index&>=-1
+  '   <tree&> is the object tree number
+  ' <object&> is the object that was selected (clicked on OR shortcut)
+  '     <mc&> is the number of clicks (1=normal/2=double clicked/1 if shortcut)
+  ' <sub_me&> is the chosen menuitem in a popup menu
+  '
+  '  PRINT AT(1,2);"index&  = ";index&;"  "
+  '  PRINT AT(1,3);"tree&   = ";tree&;"  "
+  '  PRINT AT(1,4);"object& = ";object&;"  "
+  '  PRINT AT(1,5);"mc&     = ";mc&;"  "
+  '  PRINT AT(1,6);"sub_me& = ";sub_me&;"  "
+  '
+  SELECT tree&
+    '
+  CASE current_menubar&
+    SELECT object&
+    CASE menu_abo&
+      header_about&=@win_open_dialog(2,about&,-1)
+    CASE menu_pri&
+      header_general&=@win_open_dialog(2,general&,-1)
+    CASE menu_par&
+      @rsc_setup_tree(options&)
+      header_options&=@win_open_dialog(5,options&,-1)
+    CASE menu_qui&
+      exit_program!=TRUE
+    ENDSELECT
+    '
+    ' ------------------------------------------------------------------------
+    '
+  CASE general&
+    num&=255
+    SELECT object&
+    CASE gene_htm&
+      fichier_tampon$=@selectric_load$(txt_load$,c_path$+"*.TXT","","","",num&)
+      @prepare_html
+    CASE gene_st&
+      fichier_tampon$=@selectric_load$(txt_load$,c_path$+"*.TXT","","","",num&)
+      @prepare_stpc
+    CASE gene_win&
+      fichier_tampon$=@selectric_load$(txt_load$,c_path$+"*.TXT","","","",num&)
+      @prepare_pcst
+    CASE gene_acc&
+      fichier_tampon$=@selectric_load$(txt_load$,c_path$+"*.TXT","","","",num&)
+      @prepare_accents
+    CASE gene_inf&
+      header_about&=@win_open_dialog(2,about&,-1)
+    CASE gene_opt&
+      @rsc_setup_tree(options&)
+      header_options&=@win_open_dialog(5,options&,-1)
+    CASE gene_qui&
+      exit_program!=TRUE
+    ENDSELECT
+    '
+    ' ------------------------------------------------------------------------
+    '
+  CASE about&
+    SELECT object&
+    CASE abou_gop&
+      @win_close(header_about&)
+      header_postcard=@win_open_dialog(2,postcard&,-1)
+    ENDSELECT
+    '
+    ' ------------------------------------------------------------------------
+    '
+  CASE options&
+    SELECT object&
+    CASE opti_htm&
+      @rsc_setup_tree(html&)
+      header_html&=@win_open_dialog(5,html&,-1)
+    CASE opti_ok&
+      @win_close(header_options&)
+      @rsc_recevoir_val(options&)
+    CASE opti_load&
+      fichier_option$=@fileselector$(pref_load$,program_path$,"TEXTO.INF",0)
+      IF fichier_option$<>""
+        @load_options(fichier_option$)
+      ENDIF
+      @rsc_setup_tree(html&)
+      @win_close(header_options&)
+    CASE opti_ann&
+      @win_close(header_options&)
+    CASE opti_save&
+      @rsc_recevoir_val(options&)
+      fichier_option$=@fileselector$(pref_save$,program_path$,"TEXTO.INF",0)
+      IF fichier_option$<>""
+        OPEN "o",#1,fichier_option$
+        @save_options
+      ENDIF
+      @win_close(header_options&)
+    ENDSELECT
+    '
+    ' ------------------------------------------------------------------------
+    '
+  CASE html&
+    SELECT object&
+    CASE html_ok&
+      @rsc_recevoir_val(html&)
+      @win_close(header_html&)
+    CASE html_ann&
+      @win_close(header_html&)
+    ENDSELECT
+    '
+  ENDSELECT
+RETURN
+'
+> PROCEDURE user_rsc_draw_extra(userhandle&,index&,tree&,tree%,cx&,cy&,cw&,ch&)
+  LOCAL x&,y&,w&,h&
+  ~GRAF_MOUSE(256,0) !hidem - to avoid "mousedroppings"
+  '
+  ' This procedure is here if you need to draw anything in the dialog that
+  ' cannot be in the RSC-file. The clipping rectangle is already set
+  ' for this procedure (walking the rectangle tree) MUST NOT BE ALTERED!!!
+  ' Else you may find yourself drawing over other objects, or even windows!
+  '
+  ' <userhandle&> is the userhandle you gave when opening the window
+  '               or -1 if it is a dialog window
+  ' <index&> is the index of this window in window_array&(index&,x)
+  ' <tree&> is the object tree number of the dialog or toolstrip/bar
+  ' <tree%> is the object tree adress of the dialog or toolstrip/bar
+  ' <cx&>,<cy&>,<cw&>,<ch&> is the clipping rectangle set
+  '
+  ' You should limit your drawing/blitting commands to the size and
+  ' location of an IBOX/BOX object. The BOX will give you a backround,
+  ' the IBOX will not. The location and width/height of the IBOX/BOX
+  ' are found by calling:
+  '
+  ' @rsc_ob_xywh(tree%,object&,x&,y&,w&,h&)
+  '
+  ' <tree%> is the object tree adress
+  ' <object&> is the object number
+  ' <x&> is the x-coordinate
+  ' <y&> is the y-coordinate
+  ' <w&> is the width
+  ' <h&> is the height
+  '
+  ' So you might set up a SELECT/CASE structure that looks
+  ' something like this example:
+  '
+  '   SELECT tree&
+  '   CASE dialog_1&
+  '     @rsc_ob_xywh(tree%,help2&,x&,y&,w&,h&)
+  '     DEFFILL 1,2,5
+  '     PBOX x&,y&,PRED(ADD(x&,w&)),PRED(ADD(y&,h&))
+  '   CASE toolstrip_h&
+  '     @rsc_ob_xywh(tree%,t_clip&,x&,y&,w&,h&)
+  '     DEFFILL 1,2,5
+  '     PBOX x&,y&,PRED(ADD(x&,w&)),PRED(ADD(y&,h&))
+  '   ENDSELECT
+  '
+  ~GRAF_MOUSE(257,0) !showm - display pointer again
+RETURN
+> PROCEDURE user_on_open
+  '
+  ' This procedure is called when the program is run, after the RSC is
+  ' loaded and just before the main loop. You can open program windows,
+  ' toolboxes etc. here, or  init things for your program like
+  ' loading an *.INF or .DAT file.
+  '
+  ' If run as an accessory, this procedure is called EVERY TIME
+  ' THE ACCESSORY IS OPENED. If you need to do anything just ONCE,
+  ' like disable menu-entries spesific to PROGRAM execution, set a global
+  ' flag here to avoid doing things EVERY time the accessory is opened.
+  '
+  header_general&=@win_open_dialog(2,general&,-1)
+RETURN
+> PROCEDURE user_on_exit
+  '
+  ' This procedure is called when you exit the program. If you need to
+  ' release memory, restore the original desktop or do other
+  ' "cleaning up" tasks, do it here.
+  '
+  ' If run as an accessory, this procedure is called EVERY TIME
+  ' THE ACCESSORY IS CLOSED. (Remember: An accessory is NEVER exited)
+  '
+  IF opti_autosave_var!
+    OPEN "o",#1,sys_path$+"TEXTO.INF"
+    @save_options
+  ENDIF
+RETURN
+> FUNCTION user_quit_ok
+  $F%
+  exit_program!=FALSE
+  IF acc&
+    RETURN TRUE
+  ELSE
+    '
+    ' User wants to quit
+    ' Return value: TRUE  to quit
+    '               FALSE to ignore
+    '
+    ' The following SELECT-CASE-ENDSELECT structure is just an example.
+    ' If you want to use an alert,  you may (should?:-) want to use
+    ' a windowed alert...
+    '
+    ' The rest of the code in this function should *NOT* be altered!
+    '
+    SELECT FORM_ALERT(1,"[1]"+byebye$)
+    CASE 1
+      RETURN TRUE
+    CASE 2
+      RETURN FALSE
+    ENDSELECT
+    '
+  ENDIF
+ENDFUNC
+> FUNCTION user_systemcheck
+  $F%
+  '
+  ' This function is called immediately when the program is started,
+  ' and only if the requirements in the system procedure 'SYSTEMCHECK'
+  ' is met. Remember: The RSC is NOT YET LOADED! If you need to check
+  ' anything special (like a cookie) before allowing the program to load
+  ' and run, do it here.
+  '
+  ' To continue, return TRUE
+  ' To abort the program, return FALSE
+  '
+  RETURN TRUE
+ENDFUNC
+> PROCEDURE user_gem_messages(mx&,my&,ks&,m0&,m1&,m2&,m3&,m4&,m5&,m6&,m7&)
+  '
+  ' Any message the Face Value engine do not understand, goes to this proc.
+  ' Here, you are free to implement your own communication protocols, or
+  ' to ignore unknown messages completly and leave it empty.
+  '
+  ' <mx&> and <my&> are the mouse coordinates at the time of the message
+  ' <ks&> is the keyboard state at the time of the message
+  ' <m0&> to <m7&> are the actual words in the message
+  '
+RETURN
+> PROCEDURE user_win_close_all
+  '
+  ' This procedure is called when the WIN_CLOSE_ALL procedure of the FV engine
+  ' is called, and before the windows are closed and the window arrays erased.
+  '
+  ' If you have any resources attached to each window, you can clean them
+  ' up here. (releasing memory etc.)
+  '
+RETURN
+> PROCEDURE user_window_content(index&,userhandle&,off_x&,off_y&,cx&,cy&,cw&,ch&)
+  ~GRAF_MOUSE(256,0) !hidem - to avoid "mousedroppings"
+  '
+  ' This procedure is called when a user window needs to be redrawn.
+  ' ALL of the window content should be drawn here. The x & y offsets
+  ' will be automatically updated by the system and are ALWAYS current.
+  ' DO NOT alter the clipping rectangle, it is set (walking the
+  ' rectangle list) BEFORE calling this procedure.
+  '
+  ' All your coordinates should be relative to the upper left of
+  ' the work area of the window, except for blitting wich is relative
+  ' to the upper left of the screen. If the window is scrollable/has sliders,
+  ' subtract <off_x&> from ALL x-coordinates and <off_y&> from ALL
+  ' y-coordinates.
+  '
+  ' <index&> is the index of this window in window_array&(index&,x)
+  ' <userhandle&> is the userhandle you gave when opening the window
+  ' <off_x&> is the x offset of the window contents
+  ' <off_y&> is the y offset of the window contents
+  ' <cx&>,<cy&>,<cw&>,<ch&> is the clipping rectangle set
+  '
+  '
+  ~GRAF_MOUSE(257,0) !showm - display pointer again
+RETURN
+> PROCEDURE user_mouse(handle&,userhandle&,index&,mx&,my&,mc&,mb&,ks&)
+  LOCAL x&,y&,w&,h&
+  '
+  ' If the user clicks in the work area of a userwindow
+  ' with the mouse, this procedure is called. The mouse-coordinates
+  ' are screen coordinates. There is no reason to check if the mouse is
+  ' inside the work area of the window, this procedure would not be called
+  ' otherwise.
+  '
+  ' To get the true work area of this window, you call:
+  '
+  @win_get_workarea(index&,x&,y&,w&,h&)
+  '
+  ' <x&>,<y&>,<w&> and <h&> are x,y,width and height for the work area
+  ' of the window.
+  '
+  ' <handle&> is the GEM handle of the window
+  ' <userhandle&> is the userhandle you gave when opening the window
+  ' <index&> is the index of this window in window_array&(index&,x)
+  ' <mx&> is the x-mouseposition
+  ' <my&> is the y-mouseposition
+  ' <mc&> is the number of clicks (1=normal/2=double clicked)
+  ' <mb&> is the mousebutton that was clicked (1=left/2=right)
+  ' <ks&> is the keyboard state when the mouse was clicked, thus:
+  '     IF AND(ks&,&X11): shift key pressed (either one)
+  '     IF BTST(ks&,2)  : control key pressed
+  '     IF BTST(ks&,3)  : alternate key pressed
+  '
+RETURN
+> PROCEDURE user_keyb(handle&,userhandle&,index&,ks&,key&)
+  '
+  '
+  ' To help you get going:
+  '
+  ' scancode         : BYTE(SHR(key&,8))
+  ' ascii value      : BYTE(key&)
+  ' IF AND(ks&,&X11) : shift key pressed (either one)
+  ' IF BTST(ks&,2)   : control key pressed
+  ' IF BTST(ks&,3)   : alternate key pressed
+  '
+RETURN
+> FUNCTION user_win_close_ok(index&,userhandle&)
+  $F%
+  '
+  ' User wants to close the userwindow in <index&>
+  ' <userhandle&> is the userhandle you gave when opening the window
+  ' Return value: TRUE  to close window
+  '               FALSE to ignore close call
+  '
+  ' The code in this function is just an example. If you want to use an
+  ' alert, you may (should?:-) want to use a windowed alert...
+  '
+  SELECT FORM_ALERT(1,"[1][Really close? ][ OK |Cancel]")
+  CASE 1
+    RETURN TRUE
+  CASE 2
+    RETURN FALSE
+  ENDSELECT
+  '
+ENDFUNC
+'
+' ------------------------------------------------------------------------
+' SYSTEM: Do not change or delete these, those marked with
+' '!call' can be called by you (see the docs for HOW).
+'
+> PROCEDURE init
+  LOCAL a&
+  current_menutitle&=-1
+  top_modal&=-1
+  rsc_path_name$="TEXTO.RSC"
+  max_number_windows&=8         ! +SYM
+  window_array_size&=25     ! +SYM
+  windowtree_array_size&=5     ! +SYM
+  DIM window_array&(max_number_windows&,window_array_size&)
+  DIM window_tree%(max_number_windows&,windowtree_array_size&)
+  FOR a&=0 TO max_number_windows&
+    window_array&(a&,21)=-1
+  NEXT a&
+  gdos_minimum&=0          ! +SYM
+  num_prgdef_objects&=28          ! +SYM
+  last_tree&=9          ! +SYM
+  no_rsc_found$="[3][ |Fichier ressource introuvable !| ][  OK  ]"
+  not_accessory$="[3][ |Ce n'est pas un accessoire ! | ][  OK  ]"
+  LET systemcheck_alert$="[3][ |Mauvaise configuration |du systäme.| ][ Annuler ]"
+  '
+  ' ++SYM
+  '
+  LET non_sizeable%=&H400B0001
+  '
+  REM Indices du fichier ressource pour TEXTO
+  '
+  LET system&=0 ! Formulaire/Dialogue
+  '
+  LET menu_bar&=1 ! Menu
+  LET menu_abo&=7 ! STRING dans l'arbre MENU_BAR
+  LET menu_pri&=16 ! STRING dans l'arbre MENU_BAR
+  LET menu_par&=17 ! STRING dans l'arbre MENU_BAR
+  LET menu_qui&=19 ! STRING dans l'arbre MENU_BAR
+  '
+  LET general&=2 ! Formulaire/Dialogue
+  LET gene_htm&=3 ! BUTTON dans l'arbre GENERAL
+  LET gene_st&=4 ! BUTTON dans l'arbre GENERAL
+  LET gene_win&=5 ! BUTTON dans l'arbre GENERAL
+  LET gene_acc&=6 ! BUTTON dans l'arbre GENERAL
+  LET gene_inf&=7 ! BUTTON dans l'arbre GENERAL
+  LET gene_opt&=8 ! BUTTON dans l'arbre GENERAL
+  LET gene_qui&=9 ! BUTTON dans l'arbre GENERAL
+  '
+  LET about&=3 ! Formulaire/Dialogue
+  LET abou_gop&=10 ! BOXTEXT dans l'arbre ABOUT
+  '
+  LET postcard&=4 ! Formulaire/Dialogue
+  '
+  LET options&=5 ! Formulaire/Dialogue
+  LET opti_htm&=2 ! BUTTON dans l'arbre OPTIONS
+  LET opti_chr&=5 ! BUTTON dans l'arbre OPTIONS
+  LET opti_aut&=6 ! BUTTON dans l'arbre OPTIONS
+  LET opti_ok&=7 ! BUTTON dans l'arbre OPTIONS
+  LET opti_load&=8 ! BUTTON dans l'arbre OPTIONS
+  LET opti_ann&=9 ! BUTTON dans l'arbre OPTIONS
+  LET opti_save&=10 ! BUTTON dans l'arbre OPTIONS
+  '
+  LET html&=6 ! Formulaire/Dialogue
+  LET html_aut&=2 ! BUTTON dans l'arbre HTML
+  LET html_xau&=3 ! FBOXTEXT dans l'arbre HTML
+  LET html_tit&=4 ! BUTTON dans l'arbre HTML
+  LET html_xti&=5 ! FBOXTEXT dans l'arbre HTML
+  LET html_vid&=6 ! BUTTON dans l'arbre HTML
+  LET html_xvi&=7 ! FBOXTEXT dans l'arbre HTML
+  LET html_en_&=8 ! BUTTON dans l'arbre HTML
+  LET html_enu&=9 ! BUTTON dans l'arbre HTML
+  LET html_acc&=10 ! BUTTON dans l'arbre HTML
+  LET html_spe&=11 ! BUTTON dans l'arbre HTML
+  LET html_gre&=12 ! BUTTON dans l'arbre HTML
+  LET html_et&=13 ! BUTTON dans l'arbre HTML
+  LET html_tag&=14 ! BUTTON dans l'arbre HTML
+  LET html_gui&=15 ! BUTTON dans l'arbre HTML
+  LET html_ok&=16 ! BUTTON dans l'arbre HTML
+  LET html_ann&=17 ! BUTTON dans l'arbre HTML
+  '
+  LET strings&=7 ! Formulaire/Dialogue
+  LET stri_01&=1 ! TEXT dans l'arbre STRINGS
+  LET stri_02&=2 ! TEXT dans l'arbre STRINGS
+  LET stri_03&=3 ! TEXT dans l'arbre STRINGS
+  LET stri_04&=4 ! TEXT dans l'arbre STRINGS
+  LET stri_05&=5 ! TEXT dans l'arbre STRINGS
+  LET stri_06&=6 ! TEXT dans l'arbre STRINGS
+  LET stri_07&=7 ! TEXT dans l'arbre STRINGS
+  LET stri_08&=8 ! TEXT dans l'arbre STRINGS
+  LET stri_09&=9 ! TEXT dans l'arbre STRINGS
+  LET stri_10&=10 ! TEXT dans l'arbre STRINGS
+  LET stri_11&=11 ! TEXT dans l'arbre STRINGS
+  LET stri_12&=12 ! TEXT dans l'arbre STRINGS
+  LET stri_13&=13 ! TEXT dans l'arbre STRINGS
+  LET stri_14&=14 ! TEXT dans l'arbre STRINGS
+  LET stri_15&=15 ! TEXT dans l'arbre STRINGS
+  '
+  LET fvt_alst&=8 ! Formulaire/Dialogue
+  '
+  LET fvt_asci&=9 ! Formulaire/Dialogue
+  '
+  ' ++SYM
+  '
+RETURN
+> PROCEDURE install_prg_def_main
+  LOCAL wchar&,hchar&,color3d&,font_id&,font_h&,d&
+  ~GRAF_HANDLE(wchar&,hchar&,a&,a&)
+  {ADD(faceval_sys%,22)}=ADD(GB,24)
+  INT{ADD(faceval_sys%,26)}=flydials_handle&
+  INT{ADD(faceval_sys%,28)}=wchar&
+  INT{ADD(faceval_sys%,30)}=hchar&
+  IF INT{{ADD(GB,4)}}>=&H340
+    GCONTRL(0)=48
+    GCONTRL(1)=4
+    GCONTRL(2)=3
+    GCONTRL(3)=0
+    GCONTRL(4)=0
+    GINTIN(0)=0
+    GINTIN(1)=5
+    GEMSYS
+    IF GINTOUT(0)>0
+      color3d&=GINTOUT(1)
+    ENDIF
+  ENDIF
+  IF @appl_xgetinfo(0,font_h&,font_id&,d&,d&)
+    IF ABS(font_id&)<>1 AND @vq_vgdos<>0               ! Anderer AES-Font...
+      V~H=flydials_handle&
+      ~VST_LOAD_FONTS(0)                               ! ...Fonts laden
+      DEFTEXT ,,,,font_id&
+      DEFTEXT ,,,font_h&                               ! ...und einstellen
+      V~H=-1
+    ENDIF
+  ENDIF
+  INT{ADD(faceval_sys%,32)}=color3d&>0
+  INT{ADD(faceval_sys%,34)}=color3d&
+  @install_prg_def_objects
+RETURN
+> PROCEDURE install_prg_def(tree%,ob&,nr&)
+  LOCAL c&
+  IF nr&=6 AND BYTE(OB_TYPE(tree%,ob&))<>28
+    c&=SUCC(-BTST(OB_FLAGS(tree%,ob&),1)-BTST(OB_FLAGS(tree%,ob&),2)-BTST(OB_FLAGS(tree%,ob&),6))
+    IF c&>1
+      OB_X(tree%,ob&)=OB_X(tree%,ob&)-c&
+      OB_Y(tree%,ob&)=OB_Y(tree%,ob&)-c&
+      OB_W(tree%,ob&)=OB_W(tree%,ob&)+(c&*2)
+      OB_H(tree%,ob&)=SUCC(OB_H(tree%,ob&)+(c&*2))
+    ENDIF
+  ENDIF
+  {prgdef_adress%}=ADD(faceval_sys%,INT{ADD(faceval_sys%,SHL(PRED(nr&),1))})
+  {ADD(prgdef_adress%,4)}=OB_SPEC(tree%,ob&)
+  OB_SPEC(tree%,ob&)=prgdef_adress%
+  OB_TYPE(tree%,ob&)=OR(SHL&(BYTE(OB_TYPE(tree%,ob&)),8),24)
+  ADD prgdef_adress%,8
+RETURN
+> PROCEDURE install_prg_def_objects
+  LOCAL tree%,tree&,b&,d&,hchar&
+  FOR tree&=0 TO last_tree&
+    b&=-1
+    REPEAT
+      tree%=@xrsrc_gaddr(0,tree&)
+      INC b&
+      IF BYTE(OB_TYPE(tree%,b&))=23
+      ELSE IF BYTE(OB_TYPE(tree%,b&))=31
+      ELSE
+        IF NOT BTST(OB_STATE(tree%,b&),12)
+          IF BYTE(OB_TYPE(tree%,b&))=26 OR BYTE(OB_TYPE(tree%,b&))=28
+            SELECT BYTE(SHR&(OB_TYPE(tree%,b&),8))
+            CASE 18
+              IF BTST(OB_FLAGS(tree%,b&),2)
+                @install_prg_def(tree%,b&,6)      !shortcut/exit
+              ELSE IF BTST(OB_FLAGS(tree%,b&),4)
+                @install_prg_def(tree%,b&,1)      !radiobutton/round
+              ELSE IF BTST(OB_FLAGS(tree%,b&),0)
+                @install_prg_def(tree%,b&,2)      !selectable/checkbox
+              ELSE IF BTST(OB_FLAGS(tree%,b&),6)
+                @install_prg_def(tree%,b&,6)      !shortcut/touchexit
+              ENDIF
+            CASE 19
+              @install_prg_def(tree%,b&,4)        !underlined text
+            CASE 20
+              @install_prg_def(tree%,b&,3)        !frame
+            CASE 21
+              @install_prg_def(tree%,b&,8)        !niceline
+            ENDSELECT
+          ENDIF
+          IF BYTE(SHR&(OB_TYPE(tree%,b&),8))=22
+            IF BYTE(OB_TYPE(tree%,b&))=27
+              ~GRAF_HANDLE(d&,hchar&,d&,d&)
+              IF hchar&=8 OR hchar&=16
+                @install_prg_def(tree%,b&,7)      !circlebutton
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+    UNTIL BTST(OB_FLAGS(tree%,b&),5)
+  NEXT tree&
+RETURN
+> FUNCTION systemcheck
+  $F%
+  LOCAL ok!
+  ok!=TRUE
+  IF NOT ok!
+    ~FORM_ALERT(1,systemcheck_alert$)
+  ELSE
+    ok!=@user_systemcheck
+  ENDIF
+  RETURN ok!
+ENDFUNC
+> PROCEDURE rsc_setup_tree(tree&)                                   !call
+  SELECT tree&
+  CASE options&
+    @rsc_set_selectable(tree&,opti_chr&,opti_chrono_var!)
+    @rsc_set_selectable(tree&,opti_aut&,opti_autosave_var!)
+  CASE html&
+    @rsc_set_selectable(tree&,html_aut&,html_auteur_var!)
+    @rsc_set_text(tree&,html_xau&,html_xauteur_var$)
+    @rsc_set_selectable(tree&,html_tit&,html_titre_var!)
+    @rsc_set_text(tree&,html_xti&,html_xtitre_var$)
+    @rsc_set_selectable(tree&,html_vid&,html_vide_var!)
+    @rsc_set_text(tree&,html_xvi&,html_xvide_var$)
+    @rsc_set_selectable(tree&,html_en_&,html_en_tete_var!)
+    @rsc_set_selectable(tree&,html_enu&,html_enumerer_var!)
+    @rsc_set_selectable(tree&,html_acc&,html_accents_var!)
+    @rsc_set_selectable(tree&,html_spe&,html_speciaux_var!)
+    @rsc_set_selectable(tree&,html_gre&,html_grec_var!)
+    @rsc_set_selectable(tree&,html_et&,html_et_var!)
+    @rsc_set_selectable(tree&,html_tag&,html_tags_var!)
+    @rsc_set_selectable(tree&,html_gui&,html_guillemets_var!)
+  ENDSELECT
+RETURN
+> PROCEDURE rsc_recevoir_val(tree&)
+  SELECT tree&
+  CASE options&
+    LET opti_chrono_var!=@rsc_get_selectable(tree&,opti_chr&)
+    LET opti_autosave_var!=@rsc_get_selectable(tree&,opti_aut&)
+  CASE html&
+    LET html_auteur_var!=@rsc_get_selectable(tree&,html_aut&)
+    LET html_xauteur_var$=@rsc_get_text$(tree&,html_xau&)
+    LET html_titre_var!=@rsc_get_selectable(tree&,html_tit&)
+    LET html_xtitre_var$=@rsc_get_text$(tree&,html_xti&)
+    LET html_vide_var!=@rsc_get_selectable(tree&,html_vid&)
+    LET html_xvide_var$=@rsc_get_text$(tree&,html_xvi&)
+    LET html_en_tete_var!=@rsc_get_selectable(tree&,html_en_&)
+    LET html_enumerer_var!=@rsc_get_selectable(tree&,html_enu&)
+    LET html_accents_var!=@rsc_get_selectable(tree&,html_acc&)
+    LET html_speciaux_var!=@rsc_get_selectable(tree&,html_spe&)
+    LET html_grec_var!=@rsc_get_selectable(tree&,html_gre&)
+    LET html_et_var!=@rsc_get_selectable(tree&,html_et&)
+    LET html_tags_var!=@rsc_get_selectable(tree&,html_tag&)
+    LET html_guillemets_var!=@rsc_get_selectable(tree&,html_gui&)
+  ENDSELECT
+RETURN
+> PROCEDURE rsc_read_tree(tree&,object&)
+RETURN
+> PROCEDURE context_help(tree&)
+  SELECT tree&
+  DEFAULT
+    @call_st_guide("TEXTO.HYP","")
+  ENDSELECT
+RETURN
+> FUNCTION win_snap(x&)
+  $F%
+  IF snap_windows!
+    RETURN SUB(x&,MOD(x&,16))
+  ENDIF
+  RETURN x&
+ENDFUNC
+> PROCEDURE win_place_tree(handle&)
+  LOCAL x&,y&,d&
+  ~WIND_GET(handle&,4,x&,y&,d&,d&)
+  OB_X(window_tree%(@win_get_index(handle&),0),0)=x&-window_array&(@win_get_index(handle&),15)
+  OB_Y(window_tree%(@win_get_index(handle&),0),0)=y&
+RETURN
+> PROCEDURE win_close_all                                           !call
+  LOCAL a&,b&
+  @user_win_close_all
+  FOR a&=0 TO max_number_windows&
+    IF window_array&(a&,0)>0
+      ~WIND_CLOSE(window_array&(a&,0))
+      ~WIND_DELETE(window_array&(a&,0))
+      FOR b&=0 TO window_array_size&
+        window_array&(a&,b&)=0
+      NEXT b&
+      FOR b&=0 TO windowtree_array_size&
+        window_tree%(a&,b&)=0
+      NEXT b&
+      window_array&(a&,21)=-1
+    ENDIF
+  NEXT a&
+RETURN
+> PROCEDURE win_close(handle&)                                      !call
+  LOCAL index&,type&,a&,prev_top&
+  IF handle&>0
+    index&=@win_get_index(handle&)
+    IF index&<>-1
+      ~WIND_CLOSE(handle&)
+      ~WIND_DELETE(handle&)
+      IF window_array&(index&,1)=1 OR window_array&(index&,1)=4
+        IF NOT @win_modal_enq
+          @disable_menus(0)
+        ENDIF
+      ENDIF
+      type&=window_array&(index&,1)
+      prev_top&=window_array&(index&,6)
+      FOR a&=0 TO window_array_size&
+        window_array&(index&,a&)=0
+      NEXT a&
+      window_array&(index&,21)=-1
+      FOR a&=0 TO windowtree_array_size&
+        window_tree%(index&,a&)=0
+      NEXT a&
+      IF type&=1 OR type&=4
+        IF NOT @win_modal_enq
+          @disable_menus(0)
+          top_modal&=-1
+        ELSE
+          top_modal&=prev_top&
+          ~WIND_SET(window_array&(top_modal&,0),10,0,0,0,0)
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE win_set_title(index&,title$)                            !call
+  LOCAL adr%
+  IF LEN(title$)>78
+    title$=LEFT$(title$,78)
+  ENDIF
+  title$=title$+CHR$(0)
+  adr%=window_tree%(index&,1)
+  BMOVE V:title$,adr%,LEN(title$)
+  ~WIND_SET(window_array&(index&,0),2,CARD(SWAP(adr%)),CARD(adr%),0,0)
+RETURN
+> FUNCTION win_open_dialog(type&,tree&,icon&)                       !call
+  $F%
+  LOCAL handle&,kind&,x&,y&,w&,h&,index&,tree%,dx&,dy&,dw&,dh&,d&
+  tree%=@xrsrc_gaddr(0,tree&)
+  index&=@find_free_w_array
+  IF index&<>-1
+    IF @find_handle_from_tree(tree&)=-1
+      SELECT type&
+      CASE 1,3
+        kind&=&X1001
+      CASE 2,4
+        kind&=&X1011
+      CASE 5
+        type&=1
+        kind&=&X1011
+      CASE 6
+        type&=3
+        kind&=&X1011
+      ENDSELECT
+      IF icon&<>-1 AND type&<>1 AND type&<>4
+        kind&=kind& OR &X100000000000000
+      ENDIF
+      ~WIND_CALC(0,kind&,OB_X(tree%,0),OB_Y(tree%,0),OB_W(tree%,0),OB_H(tree%,0),x&,y&,w&,h&)
+      ~WIND_GET(0,4,dx&,dy&,dw&,dh&)
+      IF x&<dx& OR y&<dy& OR x&+w&>dx&+dw& OR y&+h&>dy&+dh&
+        ~FORM_CENTER(tree%,d&,d&,d&,d&)
+        ~WIND_CALC(0,kind&,OB_X(tree%,0),OB_Y(tree%,0),OB_W(tree%,0),OB_H(tree%,0),x&,y&,w&,h&)
+        y&=MAX(y&,dy&)
+      ENDIF
+      handle&=WIND_CREATE(kind&,x&,y&,w&,h&)
+      IF handle&>0
+        window_array&(index&,0)=handle&
+        window_array&(index&,1)=type&
+        window_array&(index&,2)=@first_gftext(tree%)
+        IF window_array&(index&,2)>0
+          window_array&(index&,3)=LEN(CHAR{{OB_SPEC(tree%,window_array&(index&,2))}})
+        ELSE
+          window_array&(index&,3)=0
+        ENDIF
+        window_array&(index&,4)=tree&
+        window_array&(index&,5)=icon&
+        window_array&(index&,6)=-1
+        window_array&(index&,7)=kind&
+        window_tree%(index&,0)=tree%
+        window_tree%(index&,1)=ADD(system_pool%,MUL(index&,160))
+        '
+        IF OB_TYPE(tree%,1)=28
+          OB_FLAGS(tree%,1)=BSET(OB_FLAGS(tree%,1),7)
+          @win_set_title(index&,CHAR{OB_SPEC(tree%,1)})
+        ELSE
+          @win_set_title(index&,CHR$(0))
+        ENDIF
+        '
+        IF icon&<>-1
+          tree%=@xrsrc_gaddr(0,icon&)
+          window_tree%(index&,2)=tree%
+        ELSE
+          window_tree%(index&,2)=0
+        ENDIF
+        x&=@win_snap(x&)
+        '
+        IF type&=1 AND tree&=fvt_prog&            !***progress snap to 4
+          y&=MAX(MUL(DIV(ADD(y&,2),4),4),dy&)
+          IF NOT snap_windows!
+            x&=MUL(DIV(ADD(x&,2),4),4)
+          ENDIF
+        ENDIF
+        '
+        ~WIND_OPEN(handle&,x&,y&,w&,h&)
+        IF type&=1 OR type&=4
+          @disable_menus(-1)
+          IF top_modal&>-1
+            window_array&(index&,6)=top_modal&
+          ENDIF
+          top_modal&=index&
+        ENDIF
+        RETURN handle&
+      ELSE
+        ~@alert_standard(1,2,"")
+        RETURN 0
+      ENDIF
+    ELSE
+      ~WIND_SET(@find_handle_from_tree(tree&),10,0,0,0,0)
+      RETURN @find_handle_from_tree(tree&)
+    ENDIF
+  ELSE
+    ~@alert_standard(1,2,"")
+    RETURN 0
+  ENDIF
+ENDFUNC
+> FUNCTION win_get_index(handle&)                                   !call
+  $F%
+  LOCAL a&
+  IF handle&<>0
+    FOR a&=0 TO max_number_windows&
+      IF handle&=window_array&(a&,0)
+        RETURN a&
+      ENDIF
+    NEXT a&
+  ENDIF
+  RETURN -1
+ENDFUNC
+> PROCEDURE win_send_redraw(index&,x&,y&,w&,h&)                     !call
+  IF x&=-1 AND y&=-1 AND w&=-1 AND h&=-1
+    ~WIND_GET(window_array&(index&,0),4,x&,y&,w&,h&)
+  ENDIF
+  @aes_internal_message(20,window_array&(index&,0),x&,y&,w&,h&)
+RETURN
+> FUNCTION win_modal_enq                                            !call
+  $F%
+  LOCAL a&
+  FOR a&=0 TO max_number_windows&
+    IF window_array&(a&,1)=1 OR window_array&(a&,1)=4
+      RETURN TRUE
+    ENDIF
+  NEXT a&
+  RETURN FALSE
+ENDFUNC
+> PROCEDURE call_st_guide(filename$,page$)                          !call
+  LOCAL id&,a$
+  id&=APPL_FIND("ST-GUIDE")
+  IF id&<>-1
+    IF page$<>""
+      a$="*:\\"+filename$+" "+page$+CHR$(0)+CHR$(0)
+    ELSE
+      a$="*:\\"+filename$+CHR$(0)+CHR$(0)
+    ENDIF
+    BMOVE V:a$,st_guide%,LEN(a$)
+    DIM message&(7)
+    message&(0)=&H4711
+    message&(1)=ap_id&
+    message&(2)=0
+    LONG{V:message&(3)}=st_guide%
+    message&(5)=0
+    message&(6)=0
+    message&(7)=0
+    ~APPL_WRITE(id&,16,V:message&(0))
+    ERASE message&()
+  ENDIF
+RETURN
+> PROCEDURE v_clsvwk(handle&)                                       !call
+  CONTRL(0)=101
+  CONTRL(1)=0
+  CONTRL(3)=0
+  CONTRL(6)=handle&
+  VDISYS 101,0,0
+RETURN
+> FUNCTION get_cookie(b$,VAR b%)                                    !call
+  $F%
+  LOCAL cookie%
+  cookie%=ADD(faceval_sys%,INT{ADD(faceval_sys%,20)})
+  b%=C:cookie%(L:CVL(b$))
+  IF b%=0
+    RETURN FALSE
+  ELSE
+    RETURN TRUE
+  ENDIF
+ENDFUNC
+> FUNCTION alert_standard(default&,index&,insert$)                  !call
+  $F%
+  LOCAL tree%
+  tree%=@xrsrc_gaddr(0,fvt_alst&)
+  RETURN FORM_ALERT(default&,@insert_in_string$(CHAR{OB_SPEC(tree%,index&)},insert$))
+ENDFUNC
+> PROCEDURE rsc_ob_draw(index&,object&)                             !call
+  LOCAL x&,y&,w&,h&,handle&,d&,x1&,y1&,w1&,h1&
+  LOCAL rx&,ry&,rw&,rh&
+  IF window_array&(index&,21)<>-1
+    @win_send_redraw(index&,-1,-1,-1,-1)
+  ELSE
+    @rsc_ob_xywh(window_tree%(index&,0),object&,x&,y&,w&,h&)
+    IF BTST(OB_FLAGS(window_tree%(index&,0),object&),6) AND BTST(OB_STATE(window_tree%(index&,0),object&),12)
+      IF BYTE(OB_TYPE(window_tree%(index&,0),object&))=30
+        @rsc_ob_xywh(window_tree%(index&,0),MAX(SUB(object&,2),0),x&,y&,w&,h&)
+      ENDIF
+    ENDIF
+    ~WIND_GET(0,10,handle&,d&,d&,d&)
+    IF handle&=window_array&(index&,0)
+      ~WIND_GET(window_array&(index&,0),4,x1&,y1&,w1&,h1&)
+      IF RC_INTERSECT(x1&,y1&,w1&,h1&,x&,y&,w&,h&)
+        IF window_array&(index&,1)>0 AND window_array&(index&,2)=object&
+          @win_send_redraw(index&,x&,SUB(y&,5),w&,ADD(h&,10))
+        ELSE
+          ~WIND_GET(handle&,11,rx&,ry&,rw&,rh&)
+          WHILE rw& OR rh&
+            IF RC_INTERSECT(x&,y&,w&,h&,rx&,ry&,rw&,rh&)
+              ~OBJC_DRAW(window_tree%(index&,0),0,7,rx&,ry&,rw&,rh&)
+              CLIP rx&,ry&,rw&,rh& OFFSET 0,0
+              @user_rsc_draw_extra(-1,index&,window_array&(index&,4),window_tree%(index&,0),rx&,ry&,rw&,rh&)
+              CLIP OFF
+            ENDIF
+            ~WIND_GET(handle&,12,rx&,ry&,rw&,rh&)
+          WEND
+        ENDIF
+      ENDIF
+    ELSE
+      @win_send_redraw(index&,x&,y&,w&,h&)
+    ENDIF
+  ENDIF
+RETURN
+> FUNCTION v_opnvwk                                                 !call
+  $F%
+  LOCAL d&
+  CONTRL(0)=100
+  CONTRL(1)=0
+  CONTRL(3)=11
+  CONTRL(6)=GRAF_HANDLE(d&,d&,d&,d&)
+  INTIN(0)=XBIOS(4)+2
+  FOR d&=1 TO 9
+    INTIN(d&)=1
+  NEXT d&
+  INTIN(10)=2
+  VDISYS 100,11,0
+  RETURN CONTRL(6)
+ENDFUNC
+> PROCEDURE rsc_ob_xywh(tree%,object&,VAR x&,y&,w&,h&)              !call
+  LOCAL b&
+  ~OBJC_OFFSET(tree%,object&,x&,y&)
+  w&=OB_W(tree%,object&)
+  h&=OB_H(tree%,object&)
+  SELECT BYTE(OB_TYPE(tree%,object&))
+  CASE 20,25,27
+    b&=SUB(BYTE(SHR(OB_SPEC(tree%,object&),16)),256)
+    IF b&<-100
+      b&=0
+    ENDIF
+  CASE 22,30
+    b&=WORD{ADD(OB_SPEC(tree%,object&),22)}
+  CASE 26
+    b&=-1
+    IF BTST(OB_FLAGS(tree%,object&),0) AND BTST(OB_FLAGS(tree%,object&),2)
+      DEC b&
+    ENDIF
+    IF BTST(OB_FLAGS(tree%,object&),0) AND BTST(OB_FLAGS(tree%,object&),1) AND BTST(OB_FLAGS(tree%,object&),2)
+      DEC b&
+    ENDIF
+  ENDSELECT
+  IF b&<0
+    x&=ADD(x&,b&)
+    y&=ADD(y&,b&)
+    w&=ADD(w&,MUL(-b&,2))
+    h&=ADD(h&,MUL(-b&,2))
+  ENDIF
+RETURN
+> PROCEDURE aes_internal_message(m0&,m3&,m4&,m5&,m6&,m7&)           !call
+  DIM message&(7)
+  message&(0)=m0&
+  message&(1)=ap_id&
+  message&(2)=0
+  message&(3)=m3&
+  message&(4)=m4&
+  message&(5)=m5&
+  message&(6)=m6&
+  message&(7)=m7&
+  ~APPL_WRITE(ap_id&,16,V:message&(0))
+  ERASE message&()
+RETURN
+> FUNCTION vq_extnd(handle&,mode&,parameter&)                       !call
+  $F%
+  CONTRL(0)=102
+  CONTRL(1)=0
+  CONTRL(2)=6
+  CONTRL(3)=1
+  CONTRL(4)=45
+  CONTRL(6)=handle&
+  INTIN(0)=mode&
+  VDISYS
+  IF parameter&<45
+    RETURN INTOUT(parameter&)
+  ELSE
+    RETURN PTSOUT(parameter&-45)
+  ENDIF
+ENDFUNC
+> FUNCTION vq_vgdos                                                 !call
+  $F%
+  LOCAL a%,ret&,vq_vgdos%
+  vq_vgdos%=faceval_sys%+2834
+  a%=C:vq_vgdos%()
+  IF WORD(a%)=-2
+    ret&=0
+  ELSE IF MKL$(a%)="_FNT"
+    ret&=2
+  ELSE IF MKL$(a%)="_FSM"
+    ret&=3
+  ELSE
+    ret&=1
+  ENDIF
+  RETURN ret&
+ENDFUNC
+> PROCEDURE mouse_wait                                              !call
+  LOCAL mb&,d&
+  DO
+    ~GRAF_MKSTATE(d&,d&,mb&,d&)
+  LOOP UNTIL mb&=0
+RETURN
+> FUNCTION xrsrc_gaddr(type&,tree&)                                 !call
+  $F%
+  LOCAL tree%
+  ~RSRC_GADDR(type&,tree&,tree%)
+  RETURN tree%
+ENDFUNC
+> FUNCTION appl_xgetinfo(gtype&,VAR gout1&,gout2&,gout3&,gout4&)    !call
+  $F%
+  LOCAL magx_cookie%,magic_version&,d&,winx_version&
+  IF INT{ADD({ADD(GB,4)},2)}<>1 AND @get_cookie("MagX",magx_cookie%)
+    magic_version&=INT{ADD({ADD(magx_cookie%,8)},48)}
+  ENDIF
+  IF WIND_GET(0,1,d&,d&,d&,d&)=0
+    IF WIND_GET(0,22360,winx_version&,d&,d&,d&)=22360
+      winx_version&=OR(winx_version&,&HFFF)
+    ELSE
+      winx_version&=0
+    ENDIF
+  ENDIF
+  IF INT{{ADD(GB,4)}}>=&H400 OR magic_version&>=&H200 OR winx_version&>=&H210 OR APPL_FIND("AGI?")=0
+    GCONTRL(0)=130
+    GCONTRL(1)=1
+    GCONTRL(2)=5
+    GCONTRL(3)=0
+    GCONTRL(4)=0
+    GINTIN(0)=gtype&
+    GEMSYS
+    gout1&=GINTOUT(1)
+    gout2&=GINTOUT(2)
+    gout3&=GINTOUT(3)
+    gout4&=GINTOUT(4)
+    RETURN GINTOUT(0)
+  ENDIF
+  RETURN 0
+ENDFUNC
+> FUNCTION rsc_find_menutitle(tree&,object&)                        !call
+  LOCAL a&,num_tit&,num&,tree%
+  tree%=@xrsrc_gaddr(0,tree&)
+  IF BYTE(OB_TYPE(tree%,object&))=28 AND object&>5
+    FOR a&=3 TO object&
+      IF BYTE(OB_TYPE(tree%,a&))=20
+        INC num_tit&
+      ENDIF
+    NEXT a&
+    IF num_tit&>0
+      a&=0
+      DO
+        INC a&
+        IF BYTE(OB_TYPE(tree%,a&))=32
+          INC num&
+          EXIT IF num&=num_tit&
+        ENDIF
+      LOOP UNTIL BTST(OB_FLAGS(tree%,a&),5)
+      RETURN a&
+    ELSE
+      RETURN 0
+    ENDIF
+  ELSE
+    RETURN 0
+  ENDIF
+ENDFUNC
+> FUNCTION vsf_color(handle&,color_index&)
+  $F%
+  INTIN(0)=color_index&
+  CONTRL(0)=25
+  CONTRL(1)=0
+  CONTRL(3)=1
+  CONTRL(6)=handle&
+  VDISYS
+  RETURN INTOUT(0)
+ENDFUNC
+> FUNCTION get_rsc
+  $F%
+  RETURN RSRC_LOAD(rsc_path_name$)
+ENDFUNC
+> PROCEDURE cleanup_after_rsc
+  ~RSRC_FREE()
+RETURN
+> FUNCTION dialog_shortcuts(index&,shift!,ascii|)
+  $F%
+  LOCAL compare$,pre$,a&,tree%
+  tree%=window_tree%(index&,0)
+  IF OB_HEAD(tree%,0)<>-1
+    a&=0
+    DO
+      INC a&
+      IF BTST(OB_STATE(tree%,a&),3)=0 AND BTST(OB_FLAGS(tree%,a&),7)=0 AND (BTST(OB_FLAGS(tree%,a&),0) OR BTST(OB_FLAGS(tree%,a&),6))
+        IF ascii|=13 AND BTST(OB_FLAGS(tree%,a&),1)
+          @my_form_do2(1,index&,a&)
+          RETURN TRUE
+        ENDIF
+        IF BYTE(OB_TYPE(tree%,a&))=24 AND (BYTE(SHR&(OB_TYPE(tree%,a&),8))=26 OR BYTE(SHR&(OB_TYPE(tree%,a&),8))=28)
+          compare$=CHAR{{OB_SPEC(tree%,a&)+4}}
+          pre$="["+UPPER$(CHR$(ascii|))
+        ELSE IF BYTE(OB_TYPE(tree%,a&))=31
+          compare$=CHAR{{OB_SPEC(tree%,a&)+8}}
+          IF shift!
+            pre$=""+UPPER$(CHR$(ascii|))
+          ELSE
+            IF INSTR(compare$,"")
+              compare$=""
+            ENDIF
+            pre$=""+UPPER$(CHR$(ascii|))
+          ENDIF
+        ENDIF
+        IF compare$<>""
+          IF INSTR(UPPER$(compare$),pre$)
+            @my_form_do2(1,index&,a&)
+            RETURN TRUE
+          ENDIF
+        ENDIF
+      ENDIF
+    LOOP UNTIL BTST(OB_FLAGS(tree%,a&),5)
+  ENDIF
+  RETURN FALSE
+ENDFUNC
+> PROCEDURE disable_menus(disable!)
+  LOCAL d&
+  IF disable!<>menu_disabled!
+    IF NOT acc&
+      IF current_menutitle&<>-1
+        ~MENU_TNORMAL(menubar_adress%,current_menutitle&,1)
+        current_menutitle&=-1
+      ENDIF
+      d&=3
+      DO
+        INC d&
+        IF OB_TYPE(menubar_adress%,d&)=32
+          IF disable!
+            OB_STATE(menubar_adress%,d&)=BSET(OB_STATE(menubar_adress%,d&),3)
+          ELSE
+            OB_STATE(menubar_adress%,d&)=BCLR(OB_STATE(menubar_adress%,d&),3)
+          ENDIF
+        ENDIF
+      LOOP UNTIL BTST(OB_FLAGS(menubar_adress%,d&),5)
+      d&=0
+      DO
+        IF OB_TYPE(menubar_adress%,d&)=28
+          IF disable!
+            OB_STATE(menubar_adress%,d&)=BSET(OB_STATE(menubar_adress%,d&),3)
+          ELSE
+            OB_STATE(menubar_adress%,d&)=BCLR(OB_STATE(menubar_adress%,d&),3)
+          ENDIF
+          EXIT IF TRUE
+        ENDIF
+        INC d&
+      LOOP UNTIL BTST(OB_FLAGS(menubar_adress%,d&),5)
+      ~WIND_UPDATE(1)
+      ~MENU_BAR(menubar_adress%,1)
+      ~WIND_UPDATE(0)
+    ENDIF
+    menu_disabled!=disable!
+    no_w_topping!=disable!
+  ENDIF
+RETURN
+> FUNCTION help_object(tree%)
+  $F%
+  LOCAL a&
+  a&=0
+  DO
+    INC a&
+    IF BTST(OB_FLAGS(tree%,a&),15)
+      RETURN TRUE
+    ENDIF
+  LOOP UNTIL BTST(OB_FLAGS(tree%,a&),5)
+  RETURN FALSE
+ENDFUNC
+> FUNCTION find_handle_from_tree(tree&)
+  $F%
+  LOCAL a&
+  FOR a&=0 TO max_number_windows&
+    IF window_array&(a&,1)>0
+      IF tree&=window_array&(a&,4)
+        RETURN window_array&(a&,0)
+      ENDIF
+    ENDIF
+  NEXT a&
+  RETURN -1
+ENDFUNC
+> FUNCTION first_gftext(tree%)
+  $F%
+  LOCAL obj&
+  obj&=-1
+  REPEAT
+    INC obj&
+    IF BTST(OB_FLAGS(tree%,obj&),3)
+      IF NOT BTST(OB_FLAGS(tree%,obj&),7)
+        IF NOT BTST(OB_STATE(tree%,obj&),3)
+          RETURN obj&
+        ENDIF
+      ENDIF
+    ENDIF
+  UNTIL BTST(OB_FLAGS(tree%,obj&),5)
+  RETURN 0
+ENDFUNC
+> FUNCTION find_free_w_array
+  $F%
+  LOCAL a&
+  FOR a&=0 TO max_number_windows&
+    IF window_array&(a&,0)=0
+      RETURN a&
+    ENDIF
+  NEXT a&
+  RETURN -1
+ENDFUNC
+> FUNCTION insert_in_string$(a$,insert$)
+  LOCAL parse&
+  parse&=INSTR(a$,"@")
+  IF parse&<>0
+    a$=LEFT$(a$,parse&-1)+insert$+RIGHT$(a$,LEN(a$)-parse&)
+  ENDIF
+  RETURN a$
+ENDFUNC
+> FUNCTION pointforward_object(index&,object&)
+  $F%
+  IF BTST(OB_FLAGS(window_tree%(index&,0),object&),6) AND BTST(OB_FLAGS(window_tree%(index&,0),object&),12)
+    IF NOT BTST(OB_FLAGS(window_tree%(index&,0),object&),5)
+      RETURN TRUE
+    ENDIF
+  ENDIF
+  RETURN FALSE
+ENDFUNC
+> FUNCTION menu_shortcuts(tree%,tree&,k_state&,ascii|,scan|)
+  $F%
+  LOCAL a&,about!,compare$,shortcut$
+  IF AND(k_state&,&X11)
+    shortcut$=""
+  ENDIF
+  IF BTST(k_state&,2)
+    shortcut$=shortcut$+"^"
+  ENDIF
+  IF BTST(k_state&,3)
+    shortcut$=shortcut$+""
+  ENDIF
+  SELECT scan|
+  CASE 99 TO 113,74,78
+    shortcut$=shortcut$+"["+UPPER$(CHR$(ascii|))+"]"
+  CASE 1
+    shortcut$=shortcut$+"Esc"
+  CASE 14
+    shortcut$=shortcut$+"BS"
+  CASE 15
+    shortcut$=shortcut$+"Tab"
+  CASE 59 TO 68
+    shortcut$=shortcut$+"F"+STR$(scan|-58)
+  CASE 84 TO 93
+    shortcut$=shortcut$+"F"+STR$(scan|-73)
+    IF LEFT$(shortcut$)=""
+      shortcut$=RIGHT$(shortcut$,LEN(shortcut$)-1)
+    ENDIF
+  CASE 98
+    shortcut$=shortcut$+"Help"
+  CASE 82
+    shortcut$=shortcut$+"Insert"
+  CASE 71,119
+    shortcut$=shortcut$+"Home"
+  CASE 97
+    shortcut$=shortcut$+"Undo"
+  CASE 57
+    shortcut$=shortcut$+"Space"
+  DEFAULT
+    IF ascii|>32
+      IF ascii|=127
+        shortcut$=shortcut$+"Del"
+      ELSE
+        shortcut$=shortcut$+UPPER$(CHR$(ascii|))
+      ENDIF
+    ENDIF
+  ENDSELECT
+  about!=FALSE
+  a&=2
+  DO
+    INC a&
+    IF OB_TYPE(tree%,a&)=28
+      IF BTST(OB_STATE(tree%,a&),3)=0
+        compare$=TRIM$(CHAR{OB_SPEC(tree%,a&)})
+        IF RINSTR(compare$," ")
+          compare$=RIGHT$(compare$,LEN(compare$)-RINSTR(compare$," "))
+          IF compare$=shortcut$
+            IF BTST(OB_STATE(tree%,@rsc_find_menutitle(tree&,a&)),3)=0
+              @user_rsc_interact(-1,tree&,a&,1,0)
+              RETURN TRUE
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+      IF NOT about!
+        about!=TRUE
+        DO
+          INC a&
+        LOOP UNTIL OB_TYPE(tree%,a&)=20
+      ENDIF
+    ENDIF
+  LOOP UNTIL BTST(OB_FLAGS(tree%,a&),5)
+  RETURN FALSE
+ENDFUNC
+> FUNCTION menu_register(ap_id&,str_adr%)
+  $F%
+  GCONTRL(0)=35
+  GCONTRL(1)=1
+  GCONTRL(2)=1
+  GCONTRL(3)=1
+  GCONTRL(4)=1
+  GINTIN(0)=ap_id&
+  ADDRIN(0)=str_adr%
+  GEMSYS
+  RETURN GINTOUT(0)
+ENDFUNC
+> FUNCTION malloc_system_memory
+  $F%
+  LOCAL window_m%,prgdef_m%
+  window_m%=MUL(ADD(max_number_windows&,1),160)
+  prgdef_m%=MUL(num_prgdef_objects&,8)
+  system_pool%=MALLOC(window_m%+prgdef_m%+256)
+  IF system_pool%>0
+    prgdef_adress%=system_pool%+window_m%
+    st_guide%=prgdef_adress%+prgdef_m%
+    RETURN TRUE
+  ELSE
+    RETURN FALSE
+  ENDIF
+ENDFUNC
+> PROCEDURE my_form_do(mx&,my&,mc&,index&)
+  LOCAL object&
+  @win_place_tree(window_array&(index&,0))
+  object&=OBJC_FIND(window_tree%(index&,0),0,7,mx&,my&)
+  @my_form_do2(mc&,index&,object&)
+RETURN
+> PROCEDURE menu_selected(title&,menu_item&)
+  LOCAL temp&
+  temp&=current_menubar&
+  current_menutitle&=title&
+  @user_rsc_interact(-1,current_menubar&,menu_item&,1,0)
+  IF temp&=current_menubar& AND current_menutitle&=title&
+    ~MENU_TNORMAL(menubar_adress%,title&,1)
+  ENDIF
+  current_menutitle&=-1
+RETURN
+> PROCEDURE pointback_object(tree%,VAR object&)
+  IF object&>0
+    DO
+      object&=MAX(PRED(object&),0)
+    LOOP UNTIL NOT BTST(OB_FLAGS(tree%,object&),13)
+  ENDIF
+RETURN
+> PROCEDURE handle_keypress(k_state&,key&)
+  LOCAL scan|,handle&,d&,index&,ascii|,shc!
+  ~WIND_GET(0,10,handle&,d&,d&,d&)
+  index&=@win_get_index(handle&)
+  scan|=BYTE(SHR(key&,8))
+  IF BYTE(key&)=0 AND scan|>=120 AND scan|<=129
+    ascii|=PEEK(LPEEK(XBIOS(16,L:-1,L:-1,L:-1))+SUB(scan|,118))
+  ELSE
+    ascii|=PEEK(LPEEK(XBIOS(16,L:-1,L:-1,L:-1))+scan|)
+  ENDIF
+  IF index&<>-1
+    IF window_array&(index&,21)=-1 AND window_array&(index&,23)=0
+      IF window_array&(index&,4)>0
+        IF scan|=98
+          '          IF @help_object(window_tree%(index&,0))
+          '          @context_help(window_array&(index&,4))
+          '          shc!=TRUE
+          '        ENDIF
+        ENDIF
+        IF BTST(window_array&(index&,2),5) AND window_array&(index&,1)=0
+          shc!=@menu_shortcuts(window_tree%(index&,0),window_array&(index&,4),k_state&,ascii|,scan|)
+        ELSE
+          IF (BTST(k_state&,3) OR ascii|=13) AND shc!=FALSE
+            shc!=@dialog_shortcuts(index&,AND(k_state&,&X11),ascii|)
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+  IF NOT shc!
+    IF NOT no_w_topping!
+      shc!=@menu_shortcuts(menubar_adress%,current_menubar&,k_state&,ascii|,scan|)
+    ENDIF
+  ENDIF
+  IF NOT shc!
+    IF index&<>-1
+      IF window_array&(index&,21)=-1 AND window_array&(index&,23)=0
+        IF window_array&(index&,1)>0
+          IF scan|=82 AND window_array&(index&,2)>0
+            ~@win_open_dialog(4,fvt_asci&,-1)
+          ENDIF
+          IF (scan|=28 OR scan|=114) OR window_array&(index&,2)>0
+            @fgtext_input(key&,@win_get_index(handle&))
+          ENDIF
+        ELSE
+          @user_keyb(handle&,window_array&(index&,8),index&,k_state&,key&)
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE rsc_window_message(ks&,m0&,m1&,m2&,m3&,m4&,m5&,m6&,m7&,alert_loop!)
+  LOCAL d&,dy&,index&
+  SELECT m0&
+  CASE 20     !redraw
+    @rsc_redraw(m3&,m4&,m5&,m6&,m7&)
+  CASE 22     !closed
+    index&=@win_get_index(m3&)
+    IF window_array&(index&,1)=5
+      exit_program!=TRUE
+    ENDIF
+    IF NOT alert_loop!
+      @win_close(m3&)
+    ENDIF
+  CASE 28     !moved
+    m4&=@win_snap(m4&)
+    IF m3&=progress_handle&
+      ~WIND_GET(0,4,d&,dy&,d&,d&)
+      m5&=MAX(MUL(DIV(ADD(m5&,2),4),4),dy&)
+      IF NOT snap_windows!
+        m4&=MUL(DIV(ADD(m4&,2),4),4)
+      ENDIF
+    ENDIF
+    ~WIND_SET(m3&,5,m4&,m5&,m6&,m7&)
+    @win_place_tree(m3&)
+  CASE 33     !bottomed
+    IF window_array&(@win_get_index(m3&),1)<>1 AND window_array&(@win_get_index(m3&),1)<>4
+      ~WIND_SET(m3&,25,0,0,0,0)
+    ENDIF
+  ENDSELECT
+RETURN
+> PROCEDURE setup_all_trees
+  LOCAL a&
+  FOR a&=0 TO last_tree&
+    @rsc_setup_tree(a&)
+  NEXT a&
+RETURN
+> PROCEDURE form_do(mx&,my&,mc&,index&)
+  LOCAL object&,new_object&,sub&
+  @win_place_tree(window_array&(index&,0))
+  object&=OBJC_FIND(window_tree%(index&,0),0,7,mx&,my&)
+  IF object&>0
+    IF BTST(OB_STATE(window_tree%(index&,0),object&),3)=0 AND BTST(OB_FLAGS(window_tree%(index&,0),object&),7)=0
+      IF BTST(OB_FLAGS(window_tree%(index&,0),object&),13) AND BTST(OB_FLAGS(window_tree%(index&,0),object&),6)
+        @pointback_object(window_tree%(index&,0),object&)
+        IF (BTST(OB_FLAGS(window_tree%(index&,0),object&),4) OR BTST(OB_FLAGS(window_tree%(index&,0),object&),0))
+          @mouse_wait
+        ENDIF
+      ENDIF
+      IF FORM_BUTTON(window_tree%(index&,0),object&,mc&,new_object&)=0
+        IF @pointforward_object(index&,object&)
+          ADD object&,1
+          IF @pointforward_object(index&,object&)
+            ADD object&,1
+          ENDIF
+        ENDIF
+        @rsc_read_tree(window_array&(index&,4),object&)
+        IF BTST(OB_FLAGS(window_tree%(index&,0),object&),15)
+          OB_STATE(window_tree%(index&,0),object&)=BCLR(OB_STATE(window_tree%(index&,0),object&),0)
+          @rsc_ob_draw(index&,object&)
+          '          @context_help(window_array&(index&,4))
+        ELSE
+          IF BTST(OB_FLAGS(window_tree%(index&,0),object&),6)
+            IF (BTST(OB_FLAGS(window_tree%(index&,0),object&),4) OR BTST(OB_FLAGS(window_tree%(index&,0),object&),0))
+              @mouse_wait
+            ENDIF
+            @rsc_read_tree(window_array&(index&,4),object&)
+          ELSE
+            OB_STATE(window_tree%(index&,0),object&)=BCLR(OB_STATE(window_tree%(index&,0),object&),0)
+            @rsc_ob_draw(index&,object&)
+          ENDIF
+          @user_rsc_interact(index&,window_array&(index&,4),object&,mc&,sub&)
+        ENDIF
+      ELSE
+        @rsc_read_tree(window_array&(index&,4),object&)
+      ENDIF
+      IF window_array&(index&,0)>0
+        IF BTST(OB_FLAGS(window_tree%(index&,0),new_object&),3)
+          IF NOT BTST(OB_STATE(window_tree%(index&,0),new_object&),12)
+            ~OBJC_EDIT(window_tree%(index&,0),window_array&(index&,2),0,window_array&(index&,3),3,window_array&(index&,3))
+            window_array&(index&,2)=new_object&
+            window_array&(index&,3)=@click_set_cursor(index&,mx&,my&,window_array&(index&,3))
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE start_up
+  LOCAL d%,x&,y&,w&,h&
+  ap_id&=APPL_INIT()
+  IF ap_id&=-1
+    ~APPL_EXIT()
+    END
+  ENDIF
+  acc&=({ADD(BASEPAGE,36)}=0)
+  return_value&=1
+  @init
+  multitasking!=WORD{{GB+4}+2}<>1
+  IF @systemcheck
+    IF @get_rsc=1
+      IF @malloc_system_memory
+        flydials_handle&=@v_opnvwk
+        IF flydials_handle&<>0
+          return_value&=0
+          ~@vsf_color(flydials_handle&,1)
+          V~H=-1
+          @user_rsc_var_init
+          IF (multitasking! AND NOT @get_cookie("MagX",d%)) OR acc&
+            menu_id&=@menu_register(ap_id&,faceval_sys%+2844)
+          ENDIF
+          @install_prg_def_main
+          menubar_adress%=@xrsrc_gaddr(0,current_menubar&)
+          @setup_all_trees
+          IF acc&
+            DO
+              ~EVNT_MESAG(0)
+              IF MENU(1)=40
+                @user_on_open
+                IF @win_open_accmenu(current_menubar&)
+                  forced_exit!=FALSE
+                  exit_program!=FALSE
+                  @main_loop(0)
+                  @win_close_all
+                ENDIF
+              ENDIF
+              @user_on_exit
+            LOOP
+          ENDIF
+          ~GRAF_MOUSE(0,0)
+          ~WIND_UPDATE(1)
+          ~MENU_BAR(menubar_adress%,1)
+          ~WIND_UPDATE(0)
+          IF NOT compiled!
+            ~WIND_GET(0,4,x&,y&,w&,h&)
+            ~FORM_DIAL(3,0,0,0,0,x&,y&,w&,h&)
+          ENDIF
+          @user_on_open
+          @main_loop(0)
+          @win_close_all
+          ~WIND_UPDATE(1)
+          ~MENU_BAR(menubar_adress%,0)
+          ~WIND_UPDATE(0)
+          @user_on_exit
+          IF NOT acc&
+            ~WIND_SET(0,14,0,0,0,0)
+          ENDIF
+          @v_clsvwk(flydials_handle&)
+          V~H=-1
+        ELSE
+          ~@alert_standard(1,3,"")
+        ENDIF
+        ~MFREE(system_pool%)
+      ELSE
+        ~@alert_standard(1,1,"")
+      ENDIF
+      @cleanup_after_rsc
+    ELSE
+      ~FORM_ALERT(1,no_rsc_found$)
+    ENDIF
+  ENDIF
+  ~APPL_EXIT()
+  IF compiled!
+    QUIT return_value&
+  ELSE
+    RESERVE
+    EDIT
+  ENDIF
+RETURN
+> PROCEDURE rsc_redraw(handle&,x&,y&,w&,h&)
+  LOCAL rx&,ry&,rw&,rh&,top_handle&,d&,index&
+  ~WIND_UPDATE(1)
+  ~WIND_GET(0,10,top_handle&,d&,d&,d&)
+  ~WIND_GET(handle&,11,rx&,ry&,rw&,rh&)
+  index&=@win_get_index(handle&)
+  @win_place_tree(handle&)
+  IF top_handle&=handle&
+    IF window_array&(index&,2)<>0
+      ~OBJC_EDIT(window_tree%(index&,0),window_array&(index&,2),0,window_array&(index&,3),3,window_array&(index&,3))
+    ENDIF
+  ENDIF
+  WHILE rw& OR rh&
+    IF RC_INTERSECT(x&,y&,w&,h&,rx&,ry&,rw&,rh&)
+      IF window_array&(index&,21)<>-1
+        ~OBJC_DRAW(window_tree%(index&,2),0,7,rx&,ry&,rw&,rh&)
+      ELSE
+        ~OBJC_DRAW(window_tree%(index&,0),0,7,rx&,ry&,rw&,rh&)
+        CLIP rx&,ry&,rw&,rh& OFFSET 0,0
+        @user_rsc_draw_extra(window_array&(index&,8),index&,window_array&(index&,4),window_tree%(index&,0),rx&,ry&,rw&,rh&)
+        CLIP OFF
+      ENDIF
+    ENDIF
+    ~WIND_GET(handle&,12,rx&,ry&,rw&,rh&)
+  WEND
+  IF window_array&(index&,21)=-1
+    IF top_handle&=handle&
+      IF window_array&(index&,2)<>0
+        @cursor_on(index&)
+      ENDIF
+    ENDIF
+  ENDIF
+  ~WIND_UPDATE(0)
+RETURN
+> PROCEDURE main_loop(alert_loop!)
+  LOCAL event&,mx&,my&,mb&,k_state&,key&,mc&,evnt_flags&
+  evnt_flags&=&X10011
+  DO
+    event&=EVNT_MULTI(evnt_flags&,256+2,3,0,0,0,0,0,0,0,0,0,0,0,0,time&,mx&,my&,mb&,k_state&,key&,mc&)
+    IF BTST(event&,0)
+      @handle_keypress(k_state&,key&)
+    ENDIF
+    IF BTST(event&,1)
+      @main_loop_mouse(mx&,my&,mb&,k_state&,key&,mc&)
+    ENDIF
+    IF BTST(event&,4)
+      @main_message(mx&,my&,mc&,k_state&,MENU(1),MENU(2),MENU(3),MENU(4),MENU(5),MENU(6),MENU(7),MENU(8),alert_loop!)
+    ENDIF
+    IF exit_program! AND NOT alert_loop!
+      exit_program!=@user_quit_ok
+    ENDIF
+  LOOP UNTIL exit_program! OR (exit_alert_loop! AND alert_loop!) OR forced_exit!
+RETURN
+> PROCEDURE main_loop_mouse(mx&,my&,mb&,k_state&,key&,mc&)
+  LOCAL index&,handle&,d&,object&,winx&,winy&
+  index&=@win_get_index(WIND_FIND(mx&,my&))
+  IF index&<>-1
+    ~WIND_GET(0,10,handle&,d&,d&,d&)
+    IF handle&=window_array&(index&,0)
+      SELECT window_array&(index&,1)
+      CASE 0
+        object&=OBJC_FIND(window_tree%(index&,0),0,7,mx&,my&)
+        IF BTST(window_array&(index&,2),0)
+          @win_place_tree(handle&)
+        ENDIF
+        IF BTST(window_array&(index&,2),1) OR BTST(window_array&(index&,2),2)
+          IF mb&=1 AND object&>0
+            @my_form_do(mx&,my&,mc&,index&)
+          ELSE IF object&=0
+            @user_mouse(handle&,window_array&(index&,8),index&,mx&,my&,mc&,mb&,k_state&)
+          ENDIF
+        ELSE IF BTST(window_array&(index&,2),5)
+          ~WIND_GET(handle&,4,winx&,winy&,d&,d&)
+          IF mb&=1 AND object&<>-1 AND my&<winy&+window_array&(index&,13)
+            '            IF OB_TYPE(window_tree%(index&,0),object&)=32 AND object&<>3
+            '            @dropmenu_in_window(index&,object&,-1)
+            '          ENDIF
+          ELSE
+            @user_mouse(handle&,window_array&(index&,8),index&,mx&,my&,mc&,mb&,k_state&)
+          ENDIF
+        ELSE
+          @user_mouse(handle&,window_array&(index&,8),index&,mx&,my&,mc&,mb&,k_state&)
+        ENDIF
+      CASE 1,2,3
+        IF mb&=1 AND mc&
+          @form_do(mx&,my&,mc&,index&)
+        ENDIF
+      CASE 4
+        IF mb&=1
+          @win_ascii_click(handle&,mx&,my&)
+        ENDIF
+      CASE 5
+        object&=OBJC_FIND(window_tree%(index&,0),0,7,mx&,my&)
+        IF mb&=1 AND object&<>-1
+          '          IF OB_TYPE(window_tree%(index&,0),object&)=32
+          '          @dropmenu_in_window(index&,object&,0)
+          '        ENDIF
+        ENDIF
+      ENDSELECT
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE main_message(mx&,my&,mc&,ks&,m0&,m1&,m2&,m3&,m4&,m5&,m6&,m7&,alert_loop!)
+  LOCAL ob&,flags&,state&,type&,user!,handle&,d&
+  SELECT m0&
+  CASE 10
+    @menu_selected(m3&,m4&)
+  CASE 21     !topped
+    IF no_w_topping!
+      @fix_editcursor(window_array&(top_modal&,0))
+      ~WIND_SET(window_array&(top_modal&,0),10,0,0,0,0)
+    ELSE
+      IF window_array&(@win_get_index(m3&),1)=3
+        ob&=OBJC_FIND(window_tree%(@win_get_index(m3&),0),0,7,mx&,my&)
+        IF ob&=-1
+          @fix_editcursor(m3&)
+          ~WIND_SET(m3&,10,0,0,0,0)
+        ELSE
+          ~WIND_GET(0,10,handle&,d&,d&,d&)
+          IF @win_get_index(handle&)<>-1
+            type&=BYTE(OB_TYPE(window_tree%(@win_get_index(m3&),0),ob&))
+            flags&=OB_FLAGS(window_tree%(@win_get_index(m3&),0),ob&)
+            state&=OB_STATE(window_tree%(@win_get_index(m3&),0),ob&)
+            IF (BTST(flags&,0) OR BTST(flags&,2) OR BTST(flags&,4) OR BTST(flags&,6)) AND NOT (BTST(state&,12) AND BTST(flags&,6) AND type&=30)
+              @my_form_do(mx&,my&,mc&,@win_get_index(m3&))
+            ELSE
+              @fix_editcursor(m3&)
+              ~WIND_SET(m3&,10,0,0,0,0)
+            ENDIF
+          ELSE
+            @fix_editcursor(m3&)
+            ~WIND_SET(m3&,10,0,0,0,0)
+          ENDIF
+        ENDIF
+      ELSE
+        @fix_editcursor(m3&)
+        ~WIND_SET(m3&,10,0,0,0,0)
+      ENDIF
+    ENDIF
+  CASE 30,31
+    @fix_editcursor(m3&)
+  CASE 41
+    exit_program!=TRUE
+  CASE 22360 !wm_shaded
+    window_array&(@win_get_index(m3&),23)=-1
+  CASE 22361 !wm_unshaded
+    window_array&(@win_get_index(m3&),23)=0
+  CASE 50
+    forced_exit!=TRUE
+  CASE 63
+    '    @dd_receive(m3&,m4&,m5&,m6&,m7&)
+  CASE 20,33,22 TO 28
+    IF @win_get_index(m3&)<>-1
+      IF window_array&(@win_get_index(m3&),1)>0
+        @rsc_window_message(ks&,m0&,m1&,m2&,m3&,m4&,m5&,m6&,m7&,alert_loop!)
+      ELSE
+        @window_message(ks&,m0&,m1&,m2&,m3&,m4&,m5&,m6&,m7&)
+      ENDIF
+    ENDIF
+  DEFAULT
+    @user_gem_messages(mx&,my&,ks&,m0&,m1&,m2&,m3&,m4&,m5&,m6&,m7&)
+    user!=TRUE
+  ENDSELECT
+  IF gem_through! AND user!=FALSE
+    @user_gem_messages(mx&,my&,ks&,m0&,m1&,m2&,m3&,m4&,m5&,m6&,m7&)
+  ENDIF
+RETURN
+> PROCEDURE my_form_do2(mc&,index&,object&)
+  LOCAL root&,a&,ob_spec%,sub&
+  IF object&>0
+    ob_spec%=OB_SPEC(window_tree%(index&,0),object&)
+    IF NOT BTST(OB_FLAGS(window_tree%(index&,0),object&),7)
+      IF NOT BTST(OB_STATE(window_tree%(index&,0),object&),3)
+        IF BTST(OB_FLAGS(window_tree%(index&,0),object&),13) AND BTST(OB_FLAGS(window_tree%(index&,0),object&),6)
+          @pointback_object(window_tree%(index&,0),object&)
+        ENDIF
+        IF BTST(OB_FLAGS(window_tree%(index&,0),object&),6) AND NOT (BTST(OB_FLAGS(window_tree%(index&,0),object&),4) OR BTST(OB_FLAGS(window_tree%(index&,0),object&),0))
+          IF @pointforward_object(index&,object&)
+            ADD object&,1
+            IF @pointforward_object(index&,object&)
+              ADD object&,1
+            ENDIF
+          ENDIF
+          @rsc_read_tree(window_array&(index&,4),object&)
+          @user_rsc_interact(index&,window_array&(index&,4),object&,mc&,sub&)
+        ELSE
+          IF BTST(OB_FLAGS(window_tree%(index&,0),object&),0)
+            IF BTST(OB_FLAGS(window_tree%(index&,0),object&),2)      !exit
+              OB_STATE(window_tree%(index&,0),object&)=BSET(OB_STATE(window_tree%(index&,0),object&),0)
+              @rsc_ob_draw(index&,object&)
+              @mouse_wait
+              OB_STATE(window_tree%(index&,0),object&)=BCLR(OB_STATE(window_tree%(index&,0),object&),0)
+              @rsc_ob_draw(index&,object&)
+              IF BTST(OB_FLAGS(window_tree%(index&,0),object&),15)
+                '                @context_help(window_array&(index&,4))
+              ELSE
+                @user_rsc_interact(index&,window_array&(index&,4),object&,mc&,0)
+              ENDIF
+            ELSE IF BTST(OB_FLAGS(window_tree%(index&,0),object&),4) !radiobutton
+              IF BTST(OB_STATE(window_tree%(index&,0),object&),0)=FALSE
+                root&=object&
+                DO
+                  root&=OB_NEXT(window_tree%(index&,0),root&)
+                LOOP UNTIL root&<object&
+                a&=OB_HEAD(window_tree%(index&,0),root&)
+                DO
+                  IF BTST(OB_FLAGS(window_tree%(index&,0),a&),4) AND BTST(OB_STATE(window_tree%(index&,0),a&),0)
+                    OB_STATE(window_tree%(index&,0),a&)=BCLR(OB_STATE(window_tree%(index&,0),a&),0)
+                    @rsc_ob_draw(index&,a&)
+                  ENDIF
+                  a&=OB_NEXT(window_tree%(index&,0),a&)
+                LOOP UNTIL a&=root&
+                OB_STATE(window_tree%(index&,0),object&)=BSET(OB_STATE(window_tree%(index&,0),object&),0)
+                @rsc_ob_draw(index&,object&)
+              ENDIF
+              @rsc_read_tree(window_array&(index&,4),object&)
+              @mouse_wait
+              IF BTST(OB_FLAGS(window_tree%(index&,0),object&),6)
+                @user_rsc_interact(index&,window_array&(index&,4),object&,mc&,0)
+              ENDIF
+            ELSE                                                   !selectable
+              IF BTST(OB_STATE(window_tree%(index&,0),object&),0)
+                OB_STATE(window_tree%(index&,0),object&)=BCLR(OB_STATE(window_tree%(index&,0),object&),0)
+              ELSE
+                OB_STATE(window_tree%(index&,0),object&)=BSET(OB_STATE(window_tree%(index&,0),object&),0)
+              ENDIF
+              @rsc_ob_draw(index&,object&)
+              @mouse_wait
+              @rsc_read_tree(window_array&(index&,4),object&)
+              IF BTST(OB_FLAGS(window_tree%(index&,0),object&),6)
+                @user_rsc_interact(index&,window_array&(index&,4),object&,mc&,0)
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+RETURN
+> FUNCTION win_open(tit$,inf$,kind%,tree&,totw&,toth&,scrlstep&,user_handle&,x&,y&,w&,h&,icon&) !call
+  $F%
+  LOCAL handle&,cx&,cy&,cw&,ch&,index&,dx&,dy&,dw&,dh&,tree%,d&,xoff&,wchar&,kind&,usrtype&
+  index&=@find_free_w_array
+  IF index&<>-1
+    kind&=WORD{V:kind%}
+    usrtype&=WORD{V:kind%+2}
+    ~WIND_GET(0,4,dx&,dy&,dw&,dh&)
+    ~WIND_CALC(0,kind&,0,0,totw&,toth&,cx&,cy&,cw&,ch&)
+    handle&=WIND_CREATE(kind&,dx&,dy&,MIN(cw&,dw&),MIN(ch&,dh&))
+    IF handle&>0
+      window_array&(index&,0)=handle&
+      window_array&(index&,1)=0
+      window_array&(index&,2)=usrtype&
+      window_array&(index&,3)=kind&
+      window_array&(index&,4)=tree&
+      window_array&(index&,5)=icon&
+      window_array&(index&,6)=totw&
+      window_array&(index&,7)=toth&
+      window_array&(index&,8)=user_handle&
+      window_array&(index&,9)=scrlstep&
+      window_array&(index&,10)=0
+      window_array&(index&,11)=0
+      IF BTST(window_array&(index&,2),0)
+        tree%=@xrsrc_gaddr(0,tree&)
+        window_tree%(index&,0)=tree%
+        IF BTST(window_array&(index&,2),1)        !horisontal toolstrip
+          window_array&(index&,12)=0
+          window_array&(index&,13)=OB_H(tree%,1)+1
+        ELSE IF BTST(window_array&(index&,2),2)   !vertical toolstrip
+          window_array&(index&,12)=OB_W(tree%,1)+1
+          window_array&(index&,13)=0
+        ELSE IF BTST(window_array&(index&,2),5)   !menu
+          window_array&(index&,12)=0
+          window_array&(index&,13)=OB_H(tree%,2)
+          OB_X(tree%,0)=0
+          OB_Y(tree%,0)=0
+          ~OBJC_OFFSET(tree%,4,xoff&,d&)
+          ~GRAF_HANDLE(wchar&,d&,d&,d&)
+          window_array&(index&,15)=SUB(xoff&,wchar&)
+          d&=3
+          DO
+            INC d&
+          LOOP UNTIL OB_TYPE(tree%,d&)=25
+          window_array&(index&,16)=d&
+        ELSE
+          window_array&(index&,12)=0
+          window_array&(index&,13)=0
+        ENDIF
+      ENDIF
+      window_tree%(index&,1)=ADD(system_pool%,MUL(index&,160))
+      '
+      IF icon&<>-1
+        tree%=@xrsrc_gaddr(0,icon&)
+        window_tree%(index&,2)=tree%
+      ELSE
+        window_tree%(index&,2)=0
+      ENDIF
+      '
+      @win_set_title(index&,tit$)
+      @win_set_infoline(index&,inf$)
+      x&=MIN(MAX(dx&,x&),dx&+dw&-dy&)
+      y&=MIN(MAX(dy&,y&),dy&+dh&-dy&)
+      @win_align(index&,x&)
+      IF RC_INTERSECT(dx&,dy&,dw&,dh&,x&,y&,w&,h&)
+        IF BTST(usrtype&,3) OR BTST(usrtype&,7) OR NOT BTST(kind&,5)
+          @win_limit_size(index&,-1,w&,h&)
+        ENDIF
+        ~WIND_OPEN(handle&,x&,y&,w&,h&)
+      ELSE
+        IF BTST(usrtype&,3) OR BTST(usrtype&,7) OR NOT BTST(kind&,5)
+          @win_limit_size(index&,-1,w&,h&)
+        ENDIF
+        ~WIND_OPEN(handle&,dx&,dy&,MIN(dw&,w&),MIN(dh&,h&))
+      ENDIF
+      @win_set_slidersize(index&)
+      IF BTST(window_array&(index&,3),8)
+        ~WIND_SET(window_array&(index&,0),9,1,0,0,0)
+      ENDIF
+      IF BTST(window_array&(index&,3),11)
+        ~WIND_SET(window_array&(index&,0),8,1,0,0,0)
+      ENDIF
+      RETURN handle&
+    ELSE
+      ~@alert_standard(1,2,"")
+      RETURN 0
+    ENDIF
+  ELSE
+    ~@alert_standard(1,2,"")
+    RETURN 0
+  ENDIF
+ENDFUNC
+> PROCEDURE win_get_workarea(index&,VAR x&,y&,w&,h&)                !call
+  ~WIND_GET(window_array&(index&,0),4,x&,y&,w&,h&)
+  ADD y&,window_array&(index&,13)
+  SUB h&,window_array&(index&,13)
+  ADD x&,window_array&(index&,12)
+  SUB w&,window_array&(index&,12)
+RETURN
+> PROCEDURE win_set_infoline(index&,info$)                          !call
+  LOCAL adr%
+  IF window_array&(index&,1)=0
+    IF BTST(window_array&(index&,3),4)
+      IF LEN(info$)>78
+        info$=LEFT$(info$,78)
+      ENDIF
+      info$=info$+CHR$(0)
+      adr%=window_tree%(index&,1)+80
+      BMOVE V:info$,adr%,LEN(info$)
+      ~WIND_SET(window_array&(index&,0),3,CARD(SWAP(adr%)),CARD(adr%),0,0)
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE win_set_slidersize(index&)                              !call
+  LOCAL d&,w&,h&
+  IF window_array&(index&,1)=0
+    ~WIND_GET(window_array&(index&,0),4,d&,d&,w&,h&)
+    IF BTST(window_array&(index&,3),11)
+      ~WIND_SET(window_array&(index&,0),15,MIN(MAX(1000-(((window_array&(index&,6)-(w&-window_array&(index&,12)))/(window_array&(index&,6)/100))*10),1),1000),0,0,0)
+    ENDIF
+    IF BTST(window_array&(index&,3),8)
+      ~WIND_SET(window_array&(index&,0),16,MIN(MAX(1000-(((window_array&(index&,7)-(h&-window_array&(index&,13)))/(window_array&(index&,7)/100))*10),1),1000),0,0,0)
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE win_set_vslider(index&,hh&)                             !call
+  IF BTST(window_array&(index&,3),8)
+    IF window_array&(index&,7)>hh&
+      ~WIND_SET(window_array&(index&,0),9,MAX(MIN(INT((1000/(window_array&(index&,7)-hh&))*window_array&(index&,11)),1000),1),0,0,0)
+    ELSE
+      ~WIND_SET(window_array&(index&,0),9,1,0,0,0)
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE win_set_hslider(index&,ww&)                             !call
+  IF BTST(window_array&(index&,3),11)
+    IF window_array&(index&,6)>ww&
+      ~WIND_SET(window_array&(index&,0),8,MAX(MIN(INT((1000/(window_array&(index&,6)-ww&))*window_array&(index&,10)),1000),1),0,0,0)
+    ELSE
+      ~WIND_SET(window_array&(index&,0),8,1,0,0,0)
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE win_limit_size(index&,force!,VAR w&,h&)
+  LOCAL d&,maxw&,maxh&
+  IF BTST(window_array&(index&,2),3) OR force!
+    ~WIND_CALC(0,window_array&(index&,3),0,0,window_array&(index&,6)+window_array&(index&,12),window_array&(index&,7)+window_array&(index&,13),d&,d&,maxw&,maxh&)
+    w&=MIN(w&,maxw&)
+    h&=MIN(h&,maxh&)
+  ENDIF
+  IF BTST(window_array&(index&,2),7)
+    IF window_array&(index&,9)>0
+      ~WIND_CALC(1,window_array&(index&,3),0,0,w&,h&,d&,d&,maxw&,maxh&)
+      maxw&=MUL(DIV(SUB(maxw&,window_array&(index&,12)),window_array&(index&,9)),window_array&(index&,9))
+      maxh&=MUL(DIV(SUB(maxh&,window_array&(index&,13)),window_array&(index&,9)),window_array&(index&,9))
+      ~WIND_CALC(0,window_array&(index&,3),0,0,ADD(maxw&,window_array&(index&,12)),ADD(maxh&,window_array&(index&,13)),d&,d&,w&,h&)
+    ENDIF
+  ENDIF
+RETURN
+> FUNCTION win_limit_scroll(offset&,step&,limit!)
+  $F%
+  IF limit!
+    RETURN MUL(DIV(ADD(offset&,PRED(step&)),step&),step&)
+  ELSE
+    RETURN offset&
+  ENDIF
+ENDFUNC
+> PROCEDURE win_align(index&,VAR x&)
+  LOCAL xx&,d&
+  IF window_array&(index&,21)=-1
+    IF BTST(window_array&(index&,2),10)! window work area byte aligned
+      ~WIND_CALC(1,window_array&(index&,3),x&,0,100,100,xx&,d&,d&,d&)
+      xx&=PRED(MUL(DIV(ADD(ADD(xx&,window_array&(index&,12)),4),8),8))
+      IF x&<0
+        ADD xx&,1
+      ELSE
+        IF xx&<0
+          ADD xx&,8
+        ENDIF
+      ENDIF
+      ~WIND_CALC(0,window_array&(index&,3),SUB(xx&,window_array&(index&,12)),0,100,100,x&,d&,d&,d&)
+    ELSE IF BTST(window_array&(index&,2),11)! window work area word aligned
+      ~WIND_CALC(1,window_array&(index&,3),x&,0,100,100,xx&,d&,d&,d&)
+      xx&=PRED(MUL(DIV(ADD(ADD(xx&,window_array&(index&,12)),8),16),16))
+      IF x&<0
+        ADD xx&,1
+      ELSE
+        IF xx&<0
+          ADD xx&,16
+        ENDIF
+      ENDIF
+      ~WIND_CALC(0,window_array&(index&,3),SUB(xx&,window_array&(index&,12)),0,100,100,x&,d&,d&,d&)
+    ELSE
+      x&=@win_snap(x&)
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE win_on_size_full(index&,handle&)
+  LOCAL redraw!,x&,y&,w&,h&,offx&,offy&
+  ~WIND_GET(handle&,4,x&,y&,w&,h&)
+  @win_set_slidersize(index&)
+  @win_set_hslider(index&,w&-window_array&(index&,12))
+  @win_set_vslider(index&,h&-window_array&(index&,13))
+  offx&=MAX(MIN(window_array&(index&,6)-(w&-window_array&(index&,12)),window_array&(index&,10)),0)
+  offy&=MAX(MIN(window_array&(index&,7)-(h&-window_array&(index&,13)),window_array&(index&,11)),0)
+  IF offx&<>window_array&(index&,10) OR offy&<>window_array&(index&,11)
+    window_array&(index&,10)=offx&
+    window_array&(index&,11)=offy&
+    redraw!=TRUE
+  ENDIF
+  IF BTST(window_array&(index&,2),4) OR redraw!
+    @win_send_redraw(index&,x&+window_array&(index&,12),y&+window_array&(index&,13),w&-window_array&(index&,12),h&-window_array&(index&,13))
+  ENDIF
+RETURN
+> PROCEDURE redraw_userwindow(handle&,x&,y&,w&,h&)
+  LOCAL rx&,ry&,rw&,rh&,wx&,wy&,ww&,wh&,x1&,y1&,w1&,h1&,index&
+  index&=@win_get_index(handle&)
+  ~WIND_UPDATE(1)
+  ~WIND_GET(handle&,4,wx&,wy&,ww&,wh&)
+  ~WIND_GET(handle&,11,rx&,ry&,rw&,rh&)
+  IF BTST(window_array&(index&,2),0)
+    @win_place_tree(handle&)
+    IF BTST(window_array&(index&,2),5)
+      OB_W(window_tree%(index&,0),0)=ww&+window_array&(index&,15)
+      OB_W(window_tree%(index&,0),1)=ww&+window_array&(index&,15)
+      OB_W(window_tree%(index&,0),window_array&(index&,16))=ww&+window_array&(index&,15)
+      IF BTST(window_array&(index&,2),9)
+        OB_H(window_tree%(index&,0),window_array&(index&,16))=wh&-window_array&(index&,13)
+      ELSE
+        OB_H(window_tree%(index&,0),window_array&(index&,16))=1
+      ENDIF
+    ELSE
+      OB_W(window_tree%(index&,0),0)=ww&
+      OB_H(window_tree%(index&,0),0)=wh&
+    ENDIF
+    IF BTST(window_array&(index&,2),1)
+      OB_W(window_tree%(index&,0),1)=ww&
+    ELSE IF BTST(window_array&(index&,2),2)
+      OB_H(window_tree%(index&,0),1)=wh&
+    ENDIF
+  ENDIF
+  WHILE rw& OR rh&
+    IF window_array&(index&,21)<>-1
+      ~OBJC_DRAW(window_tree%(index&,2),0,7,rx&,ry&,rw&,rh&)
+    ELSE
+      x1&=wx&+window_array&(index&,12)
+      y1&=wy&+window_array&(index&,13)
+      w1&=ww&-window_array&(index&,12)
+      h1&=wh&-window_array&(index&,13)
+      IF RC_INTERSECT(x&,y&,w&,h&,rx&,ry&,rw&,rh&)
+        IF BTST(window_array&(index&,2),0)
+          IF BTST(window_array&(index&,2),5)
+            ~OBJC_DRAW(window_tree%(index&,0),1,7,rx&,ry&,rw&,rh&)
+            OB_TYPE(window_tree%(index&,0),window_array&(index&,16))=20
+            OB_SPEC(window_tree%(index&,0),window_array&(index&,16))=&HFF1101
+            ~OBJC_DRAW(window_tree%(index&,0),window_array&(index&,16),0,rx&,ry&,rw&,rh&)
+            OB_TYPE(window_tree%(index&,0),window_array&(index&,16))=25
+            OB_SPEC(window_tree%(index&,0),window_array&(index&,16))=0
+          ELSE IF BTST(window_array&(index&,2),1) OR BTST(window_array&(index&,2),2)
+            IF BTST(window_array&(index&,2),9)
+              ~OBJC_DRAW(window_tree%(index&,0),0,7,rx&,ry&,rw&,rh&)
+            ELSE
+              ~OBJC_DRAW(window_tree%(index&,0),1,7,rx&,ry&,rw&,rh&)
+            ENDIF
+          ELSE
+            ~OBJC_DRAW(window_tree%(index&,0),0,7,rx&,ry&,rw&,rh&)
+          ENDIF
+        ENDIF
+        CLIP rx&,ry&,rw&,rh& OFFSET 0,0
+        @user_rsc_draw_extra(window_array&(index&,8),index&,window_array&(index&,4),window_tree%(index&,0),rx&,ry&,rw&,rh&)
+        CLIP OFF
+        IF RC_INTERSECT(rx&,ry&,rw&,rh&,x1&,y1&,w1&,h1&)
+          CLIP x1&,y1&,w1&,h1& OFFSET wx&+window_array&(index&,12),wy&+window_array&(index&,13)
+          @user_window_content(@win_get_index(handle&),window_array&(@win_get_index(handle&),8),window_array&(index&,10),window_array&(index&,11),x1&,y1&,w1&,h1&)
+          CLIP OFF
+        ENDIF
+      ENDIF
+    ENDIF
+    ~WIND_GET(handle&,12,rx&,ry&,rw&,rh&)
+  WEND
+  ~WIND_UPDATE(0)
+RETURN
+> PROCEDURE window_message(ks&,m0&,m1&,m2&,m3&,m4&,m5&,m6&,m7&)
+  LOCAL index&,x&,y&,d&,w&,h&,offx&,offy&
+  index&=@win_get_index(m3&)
+  SELECT m0&
+  CASE 20
+    @redraw_userwindow(m3&,m4&,m5&,m6&,m7&)
+  CASE 22
+    IF @user_win_close_ok(index&,window_array&(index&,8))
+      @win_close(m3&)
+    ENDIF
+  CASE 24
+    ~WIND_GET(m3&,4,d&,d&,w&,h&)
+    SELECT m4&
+    CASE 0
+      '      @win_vscroller(index&,-MAX(h&-window_array&(index&,13),h&-window_array&(index&,9)-window_array&(index&,13)),h&-window_array&(index&,13))
+    CASE 1
+      '      @win_vscroller(index&,MAX(h&-window_array&(index&,13),h&-window_array&(index&,9)-window_array&(index&,13)),h&-window_array&(index&,13))
+    CASE 2
+      '      @win_vscroller(index&,-window_array&(index&,9),h&-window_array&(index&,13))
+    CASE 3
+      '      @win_vscroller(index&,window_array&(index&,9),h&-window_array&(index&,13))
+    CASE 4
+      '      @win_hscroller(index&,-MAX(w&-window_array&(index&,12),w&-window_array&(index&,9)-window_array&(index&,12)),w&-window_array&(index&,12))
+    CASE 5
+      '      @win_hscroller(index&,MAX(w&-window_array&(index&,12),w&-window_array&(index&,9)-window_array&(index&,12)),w&-window_array&(index&,12))
+    CASE 6
+      '      @win_hscroller(index&,-window_array&(index&,9),w&-window_array&(index&,12))
+    CASE 7
+      '      @win_hscroller(index&,window_array&(index&,9),w&-window_array&(index&,12))
+    ENDSELECT
+  CASE 25
+    ~WIND_GET(m3&,4,x&,y&,w&,h&)
+    SUB w&,window_array&(index&,12)
+    IF w&<window_array&(index&,6)
+      offx&=INT(((window_array&(index&,6)-w&)/1000)*m4&)
+      IF offx&<>window_array&(index&,10)
+        window_array&(index&,10)=@win_limit_scroll(offx&,window_array&(index&,9),BTST(window_array&(index&,2),6))
+        ~WIND_SET(m3&,8,m4&,0,0,0)
+        @redraw_userwindow(window_array&(index&,0),x&+window_array&(index&,12),y&+window_array&(index&,13),w&,h&-window_array&(index&,13))
+      ENDIF
+    ENDIF
+  CASE 26
+    ~WIND_GET(m3&,4,x&,y&,w&,h&)
+    SUB h&,window_array&(index&,13)
+    IF h&<window_array&(index&,7)
+      offy&=INT(((window_array&(index&,7)-h&)/1000)*m4&)
+      IF offy&<>window_array&(index&,11)
+        window_array&(index&,11)=@win_limit_scroll(offy&,window_array&(index&,9),BTST(window_array&(index&,2),6))
+        ~WIND_SET(m3&,9,m4&,0,0,0)
+        @redraw_userwindow(window_array&(index&,0),x&+window_array&(index&,12),y&+window_array&(index&,13),w&-window_array&(index&,12),h&)
+      ENDIF
+    ENDIF
+  CASE 23
+    ~WIND_GET(0,4,x&,y&,w&,h&)
+    d&=x&
+    @win_align(index&,x&)
+    IF x&>d&
+      SUB w&,SUB(x&,d&)
+    ENDIF
+    @win_limit_size(index&,0,w&,h&)
+    ~WIND_GET(m3&,5,m4&,m5&,m6&,m7&)
+    IF x&=m4& AND y&=m5& AND w&=m6& AND h&=m7&
+      ~WIND_GET(m3&,6,m4&,m5&,m6&,m7&)
+      @win_align(index&,m4&)
+      @win_limit_size(index&,0,m6&,m7&)
+      ~WIND_SET(m3&,5,m4&,m5&,m6&,m7&)
+    ELSE
+      ~WIND_SET(m3&,5,x&,y&,w&,h&)
+    ENDIF
+    IF BTST(window_array&(index&,2),0)
+      @win_place_tree(m3&)
+    ENDIF
+    @win_on_size_full(index&,m3&)
+  CASE 27
+    @win_limit_size(index&,0,m6&,m7&)
+    ~WIND_SET(m3&,5,m4&,m5&,m6&,m7&)
+    @win_on_size_full(index&,m3&)
+  CASE 28
+    @win_align(index&,m4&)
+    ~WIND_SET(m3&,5,m4&,m5&,m6&,m7&)
+    IF BTST(window_array&(index&,2),0)
+      @win_place_tree(m3&)
+    ENDIF
+  CASE 33
+    ~WIND_SET(m3&,25,0,0,0,0)
+  ENDSELECT
+RETURN
+> PROCEDURE vdi_bitblt(sadr%,sw&,sh&,sf&,sbp&,dadr%,dw&,dh&,df&,dbp&,x&,y&,w&,h&,dx&,dy&,mod&) !call
+  LOCAL go%
+  IF sadr%=0
+    x&=MAX(x&,0)
+    y&=MAX(y&,0)
+    w&=MIN(w&,SUCC(SUB(WORK_OUT(0),x&)))
+    h&=MIN(h&,SUCC(SUB(WORK_OUT(1),y&)))
+  ELSE IF dadr%=0
+    dx&=MAX(dx&,0)
+    dy&=MAX(dy&,0)
+    w&=MIN(w&,SUCC(SUB(WORK_OUT(0),dx&)))
+    h&=MIN(h&,SUCC(SUB(WORK_OUT(1),dy&)))
+  ENDIF
+  go%=ADD(faceval_sys%,INT{ADD(faceval_sys%,16)})
+  IF w&>0 AND h&>0
+    IF sadr%=0 OR dadr%=0
+      ~GRAF_MOUSE(256,0)
+    ENDIF
+    ~C:go%(L:sadr%,sw&,sh&,sf&,sbp&,L:dadr%,dw&,dh&,df&,dbp&,x&,y&,w&,h&,dx&,dy&,mod&)
+    IF sadr%=0 OR dadr%=0
+      ~GRAF_MOUSE(257,0)
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE aes_screen_lock                                         !call
+  ~WIND_UPDATE(1)
+  ~WIND_UPDATE(3)
+RETURN
+> PROCEDURE aes_screen_unlock                                       !call
+  ~WIND_UPDATE(0)
+  ~WIND_UPDATE(2)
+RETURN
+> FUNCTION win_open_accmenu(tree&)
+  $F%
+  LOCAL tree%,index&,handle&,ww&,wh&,d&,w&,h&,dx&,dy&,x&,y&
+  tree%=@xrsrc_gaddr(0,tree&)
+  index&=@find_free_w_array
+  IF index&<>-1
+    @win_init_accmenu(tree%,ww&,wh&)
+    ~WIND_CALC(0,&X1011,OB_X(tree%,0),OB_Y(tree%,0),ww&,wh&,x&,y&,w&,h&)
+    ~WIND_GET(0,4,dx&,dy&,d&,d&)
+    handle&=WIND_CREATE(&X1011,x&,y&,w&,h&)
+    IF handle&>0
+      window_array&(index&,0)=handle&
+      window_array&(index&,1)=5
+      window_array&(index&,2)=0
+      window_array&(index&,3)=0
+      window_array&(index&,4)=tree&
+      window_array&(index&,5)=-1
+      window_array&(index&,6)=-1
+      window_array&(index&,7)=&X1011
+      window_array&(index&,21)=-1
+      window_tree%(index&,0)=tree%
+      window_tree%(index&,1)=ADD(system_pool%,MUL(index&,160))
+      @win_set_title(index&," "+TRIM$(CHAR{faceval_sys%+2844})+" ")
+      IF x&<dx& OR y&<dy&
+        x&=dx&+16
+        y&=dy&+16
+      ENDIF
+      x&=@win_snap(x&)
+      ~WIND_OPEN(handle&,x&,y&,w&,h&)
+      RETURN handle&
+    ELSE
+      ~@alert_standard(1,2,"")
+      RETURN 0
+    ENDIF
+    RETURN 1
+  ELSE
+    ~@alert_standard(1,2,"")
+    RETURN 0
+  ENDIF
+ENDFUNC
+> PROCEDURE win_init_accmenu(tree%,VAR w&,h&)
+  LOCAL first_string&,last_title&,root&,x&,y&,d&,wchar&,obx&,oby&
+  first_string&=0
+  DO
+    INC first_string&
+  LOOP UNTIL OB_TYPE(tree%,first_string&)=28
+  root&=first_string&
+  DO
+    IF root&<>first_string&
+      OB_FLAGS(tree%,root&)=BSET(OB_FLAGS(tree%,root&),7)
+    ENDIF
+    root&=OB_NEXT(tree%,root&)
+  LOOP UNTIL root&<first_string&
+  OB_H(tree%,root&)=OB_H(tree%,first_string&)
+  d&=3
+  DO
+    last_title&=d&
+    d&=OB_NEXT(tree%,d&)
+  LOOP UNTIL OB_TYPE(tree%,d&)<>32
+  obx&=OB_X(tree%,0)
+  oby&=OB_Y(tree%,0)
+  OB_X(tree%,0)=0
+  OB_Y(tree%,0)=0
+  ~OBJC_OFFSET(tree%,last_title&,x&,y&)
+  ~GRAF_HANDLE(wchar&,d&,d&,d&)
+  w&=ADD(ADD(x&,OB_W(tree%,last_title&)),MUL(wchar&,2))
+  h&=OB_H(tree%,2)
+  OB_X(tree%,0)=obx&
+  OB_Y(tree%,0)=oby&
+RETURN
+> PROCEDURE win_ascii_click(handle&,mx&,my&)
+  LOCAL wchar&,hchar&,d&,x&,y&
+  ~WIND_GET(handle&,4,x&,y&,d&,d&)
+  @mouse_wait
+  @win_close(handle&)
+  ~GRAF_HANDLE(wchar&,hchar&,d&,d&)
+  ADD x&,DIV(wchar&,2)
+  ADD y&,DIV(hchar&,2)
+  d&=1
+  IF RC_INTERSECT(x&,y&,MUL(MUL(wchar&,2),16),MUL(hchar&,10),mx&,my&,d&,d&)
+    d&=ADD(INT(DIV(SUB(mx&,x&),MUL(wchar&,2))),INT(MUL(DIV(SUB(my&,y&),hchar&),16)))
+    SELECT d&
+    CASE 0
+      d&=127
+    CASE 32 TO 159
+      ADD d&,96
+    ENDSELECT
+    KEYPRESS d&
+  ENDIF
+RETURN
+> PROCEDURE cursor_on(index&)
+  LOCAL ob_spec%,a&
+  ob_spec%=OB_SPEC(window_tree%(index&,0),window_array&(index&,2))
+  ob_spec%=ADD({ob_spec%},window_array&(index&,3))
+  a&=BYTE{ob_spec%}
+  BYTE{ob_spec%}=0
+  ~OBJC_EDIT(window_tree%(index&,0),window_array&(index&,2),0,window_array&(index&,3),1,window_array&(index&,3))
+  BYTE{ob_spec%}=a&
+RETURN
+> FUNCTION click_set_cursor(index&,mx&,my&,idx&)
+  $F%
+  LOCAL x&,a&,i&,ob_spec%,a$,wchar&
+  ob_spec%=OB_SPEC(window_tree%(index&,0),window_array&(index&,2))
+  ~OBJC_OFFSET(window_tree%(index&,0),window_array&(index&,2),x&,a&)
+  ~GRAF_HANDLE(wchar&,a&,a&,a&)
+  a$=CHAR{{ADD(ob_spec%,4)}}
+  SELECT WORD{ADD(ob_spec%,16)}
+  CASE 0       !left
+    x&=DIV(SUB(mx&,x&),wchar&)
+  CASE 1       !right
+    x&=DIV(SUB(mx&,SUB(ADD(x&,OB_W(window_tree%(index&,0),window_array&(index&,2))),MUL(wchar&,LEN(a$)))),wchar&)
+  CASE 2       !center
+    x&=DIV(SUB(mx&,ADD(x&,DIV(OB_W(window_tree%(index&,0),window_array&(index&,2))-MUL(wchar&,LEN(a$)),2))),wchar&)
+  ENDSELECT
+  x&=MAX(x&,0)
+  i&=0
+  FOR a&=1 TO x&
+    IF MID$(a$,a&,1)="_"
+      INC i&
+    ENDIF
+  NEXT a&
+  SUB x&,(x&-i&)
+  ob_spec%=ADD({ob_spec%},x&)
+  a&=BYTE{ob_spec%}
+  BYTE{ob_spec%}=0
+  ~OBJC_EDIT(window_tree%(index&,0),window_array&(index&,2),0,idx&,1,idx&)
+  BYTE{ob_spec%}=a&
+  RETURN idx&
+ENDFUNC
+> FUNCTION form_keybd(tree%,curr_obj&,key&,VAR new_obj&,keyout&)
+  $F%
+  GCONTRL(0)=55
+  GCONTRL(1)=3
+  GCONTRL(2)=3
+  GCONTRL(3)=1
+  GCONTRL(4)=0
+  ADDRIN(0)=tree%
+  GINTIN(0)=curr_obj&
+  GINTIN(1)=key&
+  GINTIN(2)=curr_obj&
+  GEMSYS
+  new_obj&=GINTOUT(1)
+  keyout&=GINTOUT(2)
+  RETURN GINTOUT(0)
+ENDFUNC
+> PROCEDURE fgtext_input(key&,index&)
+  LOCAL new_obj&,keyout&,a&,new_pos&,new_obj&
+  IF index&<>-1
+    a&=@form_keybd(window_tree%(index&,0),window_array&(index&,2),key&,new_obj&,keyout&)
+    IF a&=1
+      IF BYTE(SHR(key&,8))<>28 AND BYTE(SHR(key&,8))<>114
+        IF new_obj&<>window_array&(index&,2)
+          ~OBJC_EDIT(window_tree%(index&,0),window_array&(index&,2),0,window_array&(index&,3),3,window_array&(index&,3))
+          window_array&(index&,2)=new_obj&
+          ~OBJC_EDIT(window_tree%(index&,0),window_array&(index&,2),0,window_array&(index&,3),1,window_array&(index&,3))
+        ENDIF
+      ENDIF
+      IF keyout&<>0
+        ~OBJC_EDIT(window_tree%(index&,0),window_array&(index&,2),keyout&,window_array&(index&,3),2,new_pos&)
+        window_array&(index&,3)=new_pos&
+      ENDIF
+      @rsc_read_tree(window_array&(index&,4),window_array&(index&,2))
+    ELSE
+      OB_STATE(window_tree%(index&,0),new_obj&)=BCLR(OB_STATE(window_tree%(index&,0),new_obj&),0)
+      @rsc_ob_draw(index&,new_obj&)
+      @user_rsc_interact(index&,window_array&(index&,4),new_obj&,1,0)
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE fix_editcursor(handle&)
+  LOCAL x&,y&,w&,h&,index&
+  index&=@win_get_index(handle&)
+  IF index&<>-1
+    IF window_array&(index&,21)=-1
+      IF window_array&(index&,1)>0
+        IF window_array&(index&,2)<>0
+          @rsc_ob_xywh(window_tree%(index&,0),window_array&(index&,2),x&,y&,w&,h&)
+          ~FORM_DIAL(3,0,0,0,0,x&,SUB(y&,5),w&,ADD(h&,10))
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE rsc_set_text(tree&,object&,string$)                     !call
+  LOCAL tree%,obspec%
+  tree%=@xrsrc_gaddr(0,tree&)
+  obspec%=ADD(faceval_sys%,INT{ADD(faceval_sys%,18)})
+  CHAR{C:obspec%(L:tree%,object&)}=string$
+RETURN
+> FUNCTION rsc_get_text$(tree&,object&)                             !call
+  LOCAL tree%,obspec%
+  tree%=@xrsrc_gaddr(0,tree&)
+  obspec%=ADD(faceval_sys%,INT{ADD(faceval_sys%,18)})
+  RETURN CHAR{C:obspec%(L:tree%,object&)}
+ENDFUNC
+> PROCEDURE rsc_set_selectable(tree&,object&,flag&)
+  LOCAL tree%
+  tree%=@xrsrc_gaddr(0,tree&)
+  IF flag&
+    OB_STATE(tree%,object&)=BSET(OB_STATE(tree%,object&),0)
+  ELSE
+    OB_STATE(tree%,object&)=BCLR(OB_STATE(tree%,object&),0)
+  ENDIF
+RETURN
+> FUNCTION rsc_get_selectable(tree&,object&)
+  $F%
+  LOCAL tree%
+  tree%=@xrsrc_gaddr(0,tree&)
+  RETURN BTST(OB_STATE(tree%,object&),0)
+ENDFUNC
+> FUNCTION fileselector$(title$,path$,file$,path_only!)             !call
+  LOCAL error&,button&
+  ~WIND_UPDATE(1)
+  IF WORD{{GB+4}}>=320
+    GCONTRL(0)=91
+    GCONTRL(1)=0
+    GCONTRL(2)=2
+    GCONTRL(3)=3
+    GCONTRL(4)=0
+    title$=title$+CHR$(0)
+    path$=path$+CHR$(0)+SPACE$(256)
+    file$=file$+CHR$(0)+SPACE$(256)
+    ADDRIN(2)=V:title$
+    ADDRIN(0)=V:path$
+    ADDRIN(1)=V:file$
+    GEMSYS
+    path$=CHAR{V:path$}
+    file$=CHAR{V:file$}
+    error&=GINTOUT(0)
+    button&=GINTOUT(1)
+  ELSE
+    error&=FSEL_INPUT(path$,file$,button&)
+  ENDIF
+  ~WIND_UPDATE(0)
+  IF button&=1 AND error&<>0
+    IF path_only!
+      RETURN LEFT$(path$,RINSTR(path$,"\"))
+    ELSE
+      IF file$<>""
+        RETURN LEFT$(path$,RINSTR(path$,"\"))+file$
+      ELSE
+        RETURN ""
+      ENDIF
+    ENDIF
+  ELSE
+    RETURN ""
+  ENDIF
+ENDFUNC
+> FUNCTION mxalloc_global(amount%)                                  !call
+  $F%
+  IF GEMDOS(48)=>&H1900
+    RETURN GEMDOS(68,L:amount%,&X101010)
+  ENDIF
+  RETURN MALLOC(amount%)
+ENDFUNC
+> FUNCTION selectric_load$(title$,path$,file$,paths$,ext$,VAR num&) !call
+  LOCAL sel_adr%,a&,b&,sel!,mem%
+  sel_adr%=@selectric_check
+  IF sel_adr%<>0
+    mem%=@mxalloc_global(ADD(MUL(num&,15),80))
+    IF mem%
+      fv_malloced%=mem%
+      '
+      IF paths$<>""
+        a&=1
+        paths$=paths$+" "
+        LONG{ADD(mem%,40)}=V:paths$
+        b&=4
+        DO
+          a&=INSTR(paths$," ",a&)
+          IF a&
+            MID$(paths$,a&)=CHR$(0)
+            LONG{ADD(ADD(mem%,40),b&)}=V:paths$+a&
+            ADD b&,4
+            INC a&
+          ENDIF
+        LOOP UNTIL a&=0
+        SDPOKE sel_adr%+16,MAX(PRED(DIV(b&,4)),1)
+        SLPOKE sel_adr%+18,ADD(mem%,40)
+      ENDIF
+      '
+      IF ext$<>""
+        a&=1
+        ext$=ext$+" "
+        LONG{mem%}=V:ext$
+        b&=4
+        DO
+          a&=INSTR(ext$," ",a&)
+          IF a&
+            MID$(ext$,a&)=CHR$(0)
+            LONG{ADD(mem%,b&)}=V:ext$+a&
+            ADD b&,4
+            INC a&
+          ENDIF
+        LOOP UNTIL a&=0
+        SDPOKE sel_adr%+10,MAX(DIV(b&,4),1)
+        SLPOKE sel_adr%+12,mem%
+      ENDIF
+      '
+      IF num&>1
+        SDPOKE sel_adr%+22,3                   !allow multiple load
+        SDPOKE sel_adr%+30,num&                !set max number of files
+        SLPOKE sel_adr%+32,ADD(mem%,80)        !filenames returned
+      ENDIF
+      '
+      sel!=TRUE
+      file$=@fileselector$(title$,path$,file$,0)
+      IF file$<>""
+        IF num&>1
+          num&=DPEEK(sel_adr%+30)
+          IF num&<>1
+            file$=LEFT$(file$,RINSTR(file$,"\"))+" "+CHAR{ADD(mem%,80)}
+            '
+            a&=INSTR(file$," ")
+            WHILE a&
+              MID$(file$,a&,1)=CHR$(0)
+              a&=INSTR(file$," ",SUCC(a&))
+            WEND
+            file$=file$+CHR$(0)+CHR$(0)
+            '
+          ENDIF
+        ELSE
+          num&=1
+        ENDIF
+      ENDIF
+      ~MFREE(mem%)
+      fv_malloced%=0
+    ENDIF
+  ENDIF
+  IF file$=""
+    num&=0
+  ENDIF
+  IF NOT sel!
+    file$=""
+    num&=-1
+  ENDIF
+  RETURN file$
+ENDFUNC
+> FUNCTION selectric_check                                          !call
+  $F%
+  LOCAL adr%
+  IF @get_cookie("FSEL",adr%)
+    IF LPEEK(adr%)=&H534C4354                              !id: SLCT
+      IF DPEEK(adr%+4)=>&H100 AND BTST(DPEEK(adr%+6),0)    !version>1.0 and ON
+        RETURN adr%
+      ENDIF
+    ENDIF
+  ENDIF
+  RETURN 0
+ENDFUNC
+'
+st2pc:
+DATA Ä,«
+DATA Å,¸
+DATA Ç,È
+DATA É,‚
+DATA Ñ,‰
+DATA Ö,‡
+DATA Ü,Â
+DATA á,Á
+DATA à,Í
+DATA â,Î
+DATA ä,Ë
+DATA ã,Ô
+DATA å,Ó
+DATA ç,Ï
+DATA é,ƒ
+DATA è,≈
+DATA ê,…
+DATA ë,Ê
+DATA í,∆
+DATA ì,Ù
+DATA î,ˆ
+DATA ï,Ú
+DATA ñ,˚
+DATA ó,˘
+DATA ò,ˇ
+DATA ô,÷
+DATA ö,‹
+DATA õ,¯
+DATA ú,£
+DATA ù,ÿ
+DATA û,◊
+DATA ü,É
+DATA †,·
+DATA °,Ì
+DATA ¢,Û
+DATA £,˙
+DATA §,Ò
+DATA •,—
+DATA ¶,™
+DATA ß,∫
+DATA ®,ø
+DATA ©,Æ
+DATA ™,¨
+DATA ´,Ω
+DATA ¨,º
+DATA ≠,°
+DATA Æ,´
+DATA Ø,ª
+DATA ∞,?
+DATA ±,?
+DATA ≤,?
+DATA ≥,?
+DATA ¥,?
+DATA µ,¡
+DATA ∂,¬
+DATA ∑,¿
+DATA ∏,©
+DATA π,?
+DATA ∫,'
+DATA ª,?
+DATA º,?
+DATA Ω,¢
+DATA æ,•
+DATA ø,?
+DATA ¿,?
+DATA ¡,?
+DATA ¬,?
+DATA √,?
+DATA ƒ,?
+DATA ≈,?
+DATA ∆,„
+DATA «,√
+DATA »,?
+DATA …,?
+DATA  ,?
+DATA À,?
+DATA Ã,?
+DATA Õ,?
+DATA Œ,?
+DATA œ,§
+DATA –,
+DATA —,–
+DATA “, 
+DATA ”,À
+DATA ‘,»
+DATA ’,i
+DATA ÷,Õ
+DATA ◊,Œ
+DATA ÿ,œ
+DATA Ÿ,?
+DATA ⁄,?
+DATA €,?
+DATA ‹,?
+DATA ›,?
+DATA ﬁ,Ã
+DATA ﬂ,Ø
+DATA ‡,”
+DATA ·,ﬂ
+DATA ‚,‘
+DATA „,“
+DATA ‰,ı
+DATA Â,’
+DATA Ê,µ
+DATA Á,˛
+DATA Ë,ﬁ
+DATA È,⁄
+DATA Í,€
+DATA Î,Ÿ
+DATA Ï,˝
+DATA Ì,›
+DATA Ó,Ø
+DATA Ô,¥
+DATA ,≠
+DATA Ò,±
+DATA Ú,=
+DATA Û,æ
+DATA Ù,∂
+DATA ı,?
+DATA ˆ,˜
+DATA ˜,∏
+DATA ¯,∞
+DATA ˘,®
+DATA ˙,∑
+DATA ˚,π
+DATA ¸,≥
+DATA ˝,≤
+DATA ˛,¶
+DATA ˇ,†
+' End

@@ -1,0 +1,57 @@
+YM PLAYER by The Beast/Typhoon (St‚phane Perez)
+===============================================
+
+This is a crappy YM player... but it works !
+YM files are soundchip files for PC and they
+come from Atari ST, Amstrad CPC, and so on.
+It wasn't tested with "YM4!" and "YM6!" files
+
+HELP WANTED :
+
+- I am looking for "YM1!", "YM4!" and "YM6!" tunes
+  to help me writting a more powerful player.
+- Please who can send me a LZH depacking routine ?
+  YM files are f*cking BIG !
+
+***** WHAT IS NOT PLAYED : ***********************
+-> LHA-packed musics (PLEASE pack them with Speed
+   or Atomik or Ice packers !)
+-> "YM1!" format (does it exist ?)
+-> Some "YM6!" tunes aren't well played because
+   they are played as "YM5!" ones...  :)
+-> Non-interleaved musics (very rare)
+-> SID-voice
+-> Digidrums
+**************************************************
+
+This player is freeware. It was written in GFA
+Basic 3.5. The source code is available, just
+tell me if you're programming another player
+using this source, or if you're optimising
+this source. Thanks!
+
+Get in touch with me: thebeast@caramail.com
+                   or thebeast@rtel.fr
+
+
+Changes from 0.1 to 0.2 :
+- now the player correctly sets the register 13 of
+  the YM.
+
+Changes from 0.2 to 0.3 :
+- now plays "YM4!", "YM5!" and "YM6!" tunes.
+- Atari packers recognized : Atomik 3.5/3.6, Speed
+  Packer 3.0 and Ice Packer 2.4
+- some more bugs were removed.
+
+
+---------------------
+YM Player version 0.3
+June 19th 1998
+
+Additional notes - this piece of software is now 
+open source and put under WTFPL license (www.wtfpl.net).
+See the COPYING file for more details.
+
+Copyright (c) 2015 St‚phane Perez (strider.mjjprod@gmail.com)
+Github: https://github.com/stephane-perez/atari
