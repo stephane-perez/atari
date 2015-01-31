@@ -1,0 +1,280 @@
+'
+' Routines to read cookies _MCH, _CPU, _VDO, _SND
+'
+' How to use it:
+' 1. Call the function cookie_jar_to_arrays
+'    It inserts cookies into two arrays (names and values)
+' 2. Call one of the function starting with "check_"
+'    The meaning of the returned values are in the "identify" procedure
+'
+' By Strider on 2015.01.31
+'
+@init
+time%=TIMER
+is_cookie_jar!=@cookie_jar_to_arrays
+IF is_cookie_jar!
+  PRINT "All cookies read in ";(TIMER-time%)/200;" s"
+  PRINT
+  @identify
+  PRINT
+  PRINT "Processed in ";(TIMER-time%)/200;" s"
+ELSE
+  PRINT "Machine is ST or Mega ST (no cookies)"
+ENDIF
+PRINT "Press any key to exit"
+~INP(2)
+EDIT
+'
+' Some initializations.
+' It is possible to change the number of cookies to read.
+'
+PROCEDURE init
+  LET array_size&=32
+  DIM cookie_names$(array_size&)
+  DIM cookie_values%(array_size&)
+RETURN
+'
+' The main procedure.
+' It calls the functions for each cookie.
+'
+PROCEDURE identify
+  '
+  ' Check the machine type
+  '
+  PRINT "Machine  : ";
+  SELECT @check_machine_cookie
+  CASE 1
+    PRINT "STe"
+  CASE 2
+    PRINT "ST Book"
+  CASE 3
+    PRINT "Mega STe"
+  CASE 4
+    PRINT "TT"
+  CASE 5
+    PRINT "Falcon030"
+  DEFAULT
+    PRINT "unknown"
+  ENDSELECT
+  '
+  ' Check the processor type
+  '
+  PRINT "Processor: ";STR$(@check_cpu_cookie)
+  '
+  ' Check the sound coprocessors (multiple values possible)
+  '
+  value%=@check_sound_cookie
+  PRINT "Sound    : ";
+  IF value%=0
+    PRINT "no sound";
+  ELSE
+    append$=""
+    IF BTST(value%,0)
+      append$="YM2149"
+    ENDIF
+    IF BTST(value%,1)
+      IF LEN(append$)>1
+        append$=append$+", "
+      ENDIF
+      append$=append$+"8 bit DMA"
+    ENDIF
+    IF BTST(value%,2)
+      IF LEN(append$)>1
+        append$=append$+", "
+      ENDIF
+      append$=append$+"16 bit DMA"
+    ENDIF
+    IF BTST(value%,3)
+      IF LEN(append$)>30
+        PRINT append$
+        append$="           "
+      ELSE IF LEN(append$)>1
+        append$=append$+", "
+      ENDIF
+      append$=append$+"DSP 56001"
+    ENDIF
+    IF BTST(value%,4)
+      IF LEN(append$)>1
+        append$=append$+", "
+      ENDIF
+      append$=append$+"Matrix"
+    ENDIF
+    IF BTST(value%,5)
+      IF LEN(append$)>1
+        append$=append$+", "
+      ENDIF
+      append$=append$+"Codec"
+    ENDIF
+    PRINT append$
+  ENDIF
+  '
+  ' Check the video chip
+  '
+  PRINT "Video    : ";
+  SELECT @check_video_cookie
+  CASE 0
+    PRINT "ST Shifter"
+  CASE 1
+    PRINT "STe Shifter"
+  CASE 2
+    PRINT "TT Shifter"
+  CASE 3
+    PRINT "Falcon030 Videl"
+  DEFAULT
+    PRINT "unknown"
+  ENDSELECT
+RETURN
+'
+' Function to read all cookies and put them in two arrays:
+' one for the name and another one for the value.
+' Returns true if a cookie jar is found, false otherwise.
+'
+> FUNCTION cookie_jar_to_arrays
+found_cookies!=FALSE
+@super
+cookie_jar_addr%=LONG{&H5A0}
+IF cookie_jar_addr%>0
+  current_addr%=cookie_jar_addr%
+  '
+  ' max cookie size is 32 slots (8 * 32 = 256)
+  '
+  max_addr%=cookie_jar_addr%+256
+  '
+  i|=0
+  WHILE current_addr%<max_addr% AND i|<=array_size&
+    '
+    ' get the cookie name
+    '
+    key$=MKL$(LONG{current_addr%})
+    '
+    cookie_names$(i|)=key$
+    ADD current_addr%,4
+    '
+    ' get the cookie value
+    '
+    value%=LONG{current_addr%}
+    cookie_values%(i|)=value%
+    ADD current_addr%,4
+    INC i|
+  WEND
+  found_cookies!=TRUE
+ENDIF
+@user
+RETURN found_cookies!
+ENDFUNC
+'
+' Generic function to get the value of a cookie according to its name.
+' Kind of helper for each function reading a cookie.
+' Returns the value of the cookie or -1 if not found.
+'
+> FUNCTION get_cookie_value_by_name(name$)
+LOCAL found!,i|
+'
+found!=FALSE
+i|=0
+value%=-1
+'
+WHILE found!=FALSE AND i|<array_size&
+IF cookie_names$(i|)=name$
+  value%=cookie_values%(i|)
+  found!=TRUE
+ENDIF
+INC i|
+WEND
+RETURN value%
+ENDFUNC
+'
+' Interprets the value of the _MCH cookie.
+' Returns a number between 1 and 5 (or 0 if no cookie found).
+'
+> FUNCTION check_machine_cookie
+result|=0
+value%=@get_cookie_value_by_name("_MCH")
+IF value%<>-1
+IF BTST(value%,17)
+IF BTST(value%,16)
+  ' Falcon030
+  result|=5
+ELSE
+  ' TT
+  result|=4
+ENDIF
+ELSE IF BTST(value%,16)
+IF BTST(value%,4)
+  ' Mega STe
+  result|=3
+ELSE IF BTST(value%,0)
+  ' ST Book
+  result|=2
+ELSE
+  ' STe
+  result|=1
+ENDIF
+ENDIF
+ENDIF
+RETURN result|
+ENDFUNC
+'
+' Interprets the value of the _CPU cookie.
+' Returns the name of the CPU (or 68000 if no cookie found).
+'
+> FUNCTION check_cpu_cookie
+result%=68000
+value%=@get_cookie_value_by_name("_CPU")
+IF value%<>-1
+ADD result%,value%
+ENDIF
+RETURN result%
+ENDFUNC
+'
+' Interprets the value of the _SND cookie.
+' Returns a 6-bit value (or 0 if no cookie found).
+' Multiple values are possible.
+'
+> FUNCTION check_sound_cookie
+result%=@get_cookie_value_by_name("_SND")
+IF result%=-1
+result%=0
+ENDIF
+RETURN result%
+ENDFUNC
+'
+' Interprets the value of the _SND cookie.
+' Returns a number between 0 and 3 (or -1 if no cookie found).
+'
+> FUNCTION check_video_cookie
+result&=-1
+value%=@get_cookie_value_by_name("_VDO")
+IF value%<>-1
+IF BTST(value%,17)
+IF BTST(value%,16)
+' Falcon030
+result&=3
+ELSE
+' TT
+result&=2
+ENDIF
+ELSE
+IF BTST(value%,16)
+' STe
+result&=1
+ELSE
+' ST
+result&=0
+ENDIF
+ENDIF
+ENDIF
+RETURN result&
+ENDFUNC
+'
+' System routine to switch to super user
+'
+> PROCEDURE super
+super%=GEMDOS(32,L:0)
+RETURN
+'
+' System routine to switch back to simple user
+'
+> PROCEDURE user
+~GEMDOS(32,L:super%)
+RETURN
