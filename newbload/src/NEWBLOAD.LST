@@ -1,0 +1,119 @@
+$m100000
+'
+' Exemple d'utilisation de "newbload" pour remplacer la commande
+' BLOAD du GFA (chargement d'un fichier dans un buffer).
+'
+' Exemple choisi : charger une image Degas (PI1) d‚j… compress‚e
+' ou non. Utiliser par exemple les fichiers PICTURE.* ci-joints.
+' L'image est ensuite affich‚e en basse r‚solution. On restaure
+' l'ancienne r‚solution avant de partir.
+'
+' La routine reconnaŒt automatiquement les formats de compression
+' suivants : Atomik Packer 3.5/3.6, Ice Packer 2.4, Speed Packer 3.
+'
+' Routine assembleur ‚crite par ST Ghost/Sector One
+' Exemple pour le forum GFA (gfabasic.forumavie.com) par Strider/MjjProd
+' A utiliser et … diffuser ;-)
+' Le 01/02/2015
+'
+INLINE newbload%,3036
+'
+@inits                                  ! quelques inits
+@select_file                            ! on choisit le fichier
+IF is_file!                             ! si le fichier existe,
+  @newbload(filename$)                  ! le charger et le d‚compresser
+  IF is_error!                          ! erreur lors du chargement ou
+    PRINT "Erreur de chargement !"      ! de la d‚compression ?
+  ELSE
+    @prepare_display                    ! on passe en ST Low et on coupe la souris
+    @display_pi1                        ! affichage de l'image avec sa palette
+  ENDIF
+  ~INP(2)                               ! on attend une touche
+  ~MFREE(buffer%)                       ! on libŠre la m‚moire
+ENDIF
+@restore                                ! on remet la palette et la r‚solution
+EDIT                                    ! et ciao !
+'
+' ### Procedures ###
+'
+' Choix d'un fichier, rien de sp‚cial
+' Un bool‚en permet de savoir si un fichier a bien ‚t‚ s‚lectionn‚
+'
+> PROCEDURE select_file
+  FILESELECT "\*.*","",filename$
+  is_file!=filename$<>"" AND EXIST(filename$)
+RETURN
+'
+' Chargement d'un fichier et d‚compression automatique
+' La variable de la m‚moire tampon est buffer%
+' Un bool‚en permet de savoir s'il faut lib‚rer la m‚moire avant de quitter
+' Un autre bool‚en sert … g‚rer les erreurs
+' On peut r‚cup‚rer la taille du fichier d‚compress‚ dans size%
+'
+> PROCEDURE newbload(filename$)
+  is_buffer!=FALSE
+  is_error!=FALSE
+  fic_stg$=filename$+CHR$(0)
+  LONG{newbload%+28}=V:fic_stg$     ! chemin et nom du fichier
+  ~C:newbload%()                    ! calcule la taille n‚cessaire
+  size%=LONG{newbload%+32}          ! taille du fichier aprŠs d‚compactage
+  buffer%=MALLOC(size%)
+  is_buffer!=TRUE
+  LONG{newbload%+32}=buffer%        ! adresse de chargement
+  lodepack%=newbload%+2             ! adresse du code
+  ~C:lodepack%()                    ! charge et d‚compacte
+  IF LONG{newbload%+32}<>size%
+    '  ######### Erreur Disk #########
+    '  ###### l… j'y peux rien #######
+    is_error!=TRUE
+  ENDIF
+RETURN
+'
+' Avant l'affichage de l'image, on va passer en ST Low et couper la souris
+'
+> PROCEDURE prepare_display
+  HIDEM
+  OUT 4,18
+  ~XBIOS(5,L:-1,L:-1,W:0)
+RETURN
+'
+' Affichage bourrin d'une image directement … l'‚cran, avec sa palette
+'
+> PROCEDURE display_pi1
+  LOCAL palette$
+  '
+  palette$=SPACE$(32)
+  BMOVE buffer%+2,V:palette$,32         ! on met de c“t‚ la palette
+  VSYNC
+  '
+  super%=GEMDOS(32,L:0)                 ! on passe en superviseur
+  BMOVE V:palette$,&HFFFF8240,32        ! pour changer la palette
+  ~GEMDOS(32,L:super%)                  ! on repasse en utilisateur
+  BMOVE buffer%+34,XBIOS(2),32000       ! et on affiche d'un coup l'image
+RETURN
+'
+> PROCEDURE inits
+  old_rez&=XBIOS(4)
+  old_palette$=SPACE$(32)
+  '
+  RESERVE 100000
+  CLS
+  ' save old palette in supervisor mode
+  super%=GEMDOS(32,L:0)
+  BMOVE &HFFFF8240,V:old_palette$,32
+  ~GEMDOS(32,L:super%)
+RETURN
+> PROCEDURE restore
+  ' restore old palette
+  super%=GEMDOS(32,L:0)
+  BMOVE V:old_palette$,&HFFFF8240,32
+  ~GEMDOS(32,L:super%)
+  ' restore resolution
+  ~XBIOS(5,L:-1,L:-1,W:old_rez&)
+  VSYNC
+  ' restore mouse
+  OUT 4,8
+  SHOWM
+  RESERVE
+  CLS
+RETURN
