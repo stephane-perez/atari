@@ -1,0 +1,737 @@
+'
+' Oh No! More Dots
+' Atari ST intro for VIP 2018
+'
+' Gloky + Strider / MJJ Prod
+' 20180604
+'
+INLINE i.powered%,1920
+INLINE i.addcolors%,1920
+INLINE i.curves%,1920
+INLINE i.function%,1920
+INLINE i.sndhplay%,186
+INLINE i.music%,11916
+'
+' g.sys_path$="D:\DEMOS.GFA\GLOKDOTS\"
+' BLOAD g.sys_path$+"POWERED.INL",i.powered%
+' BLOAD g.sys_path$+"ADDCOLOR.INL",i.addcolors%
+' BLOAD g.sys_path$+"CURVES.INL",i.curves%
+' BLOAD g.sys_path$+"FUNCTION.INL",i.function%
+' BLOAD g.sys_path$+"GWEMSNDH.INL",i.sndhplay%
+' BLOAD g.sys_path$+"POP2149.INL",i.music%
+'
+@sys_init
+'
+@init_palettes
+@variables
+@sndh_play
+@fading
+@main_loop
+@sndh_stop
+'
+@sys_restore
+'
+' ***** Demo procedures *****
+'
+> PROCEDURE main_loop
+  LOCAL timer1%,timer2%,timer3%,timer4%
+  LOCAL byebye!         ! if true, exit the screen
+  LOCAL synchro!        ! if true, activate the VSYNC
+  '
+  ' Inits and variables
+  '
+  REPEAT
+  UNTIL INKEY$=""
+  timer1%=TIMER
+  timer3%=0
+  byebye!=FALSE
+  synchro!=FALSE
+  '
+  ' Timer events for 'add colors'
+  col%=1000
+  col01%=col%
+  col01_%=ADD(col01%,5)
+  col02%=ADD(col01_%,15)
+  col02_%=ADD(col02%,5)
+  col03%=ADD(col02_%,15)
+  col03_%=ADD(col03%,5)
+  col04%=ADD(col03_%,15)
+  col04_%=ADD(col04%,5)
+  col05%=ADD(col04_%,15)
+  col05_%=ADD(col05%,5)
+  col06%=ADD(col05_%,15)
+  col06_%=ADD(col06%,5)
+  col07%=ADD(col06_%,15)
+  col07_%=ADD(col07%,5)
+  col08%=ADD(col07_%,15)
+  col08_%=ADD(col08%,5)
+  col09%=ADD(col08_%,15)
+  col09_%=ADD(col09%,5)
+  col10%=ADD(col09_%,15)
+  col10_%=ADD(col10%,5)
+  col11%=ADD(col10_%,15)
+  col11_%=ADD(col11%,5)
+  col12%=ADD(col11_%,15)
+  col12_%=ADD(col12%,5)
+  col_last%=ADD(col12_%,100)
+  col_last_%=ADD(col_last%,5)
+  '
+  ' Timer events to remove 'add colors'
+  xcol%=2650
+  xcol01%=xcol%
+  xcol01_%=ADD(xcol01%,5)
+  xcol02%=ADD(xcol01_%,15)
+  xcol02_%=ADD(xcol02%,5)
+  xcol03%=ADD(xcol02_%,15)
+  xcol03_%=ADD(xcol03%,5)
+  xcol04%=ADD(xcol03_%,15)
+  xcol04_%=ADD(xcol04%,5)
+  xcol05%=ADD(xcol04_%,15)
+  xcol05_%=ADD(xcol05%,5)
+  xcol06%=ADD(xcol05_%,15)
+  xcol06_%=ADD(xcol06%,5)
+  xcol07%=ADD(xcol06_%,15)
+  xcol07_%=ADD(xcol07%,5)
+  xcol08%=ADD(xcol07_%,15)
+  xcol08_%=ADD(xcol08%,5)
+  xcol09%=ADD(xcol08_%,15)
+  xcol09_%=ADD(xcol09%,5)
+  xcol10%=ADD(xcol09_%,15)
+  xcol10_%=ADD(xcol10%,5)
+  xcol11%=ADD(xcol10_%,15)
+  xcol11_%=ADD(xcol11%,5)
+  xcol12%=ADD(xcol11_%,15)
+  xcol12_%=ADD(xcol12%,5)
+  '
+  ' Timer events for 'change curves'
+  curv%=3000
+  curv01%=curv%
+  curv01_%=ADD(curv01%,5)
+  curv02%=ADD(curv01_%,15)
+  curv02_%=ADD(curv02%,5)
+  curv03%=ADD(curv02_%,15)
+  curv03_%=ADD(curv03%,5)
+  curv04%=ADD(curv03_%,15)
+  curv04_%=ADD(curv04%,5)
+  curv05%=ADD(curv04_%,15)
+  curv05_%=ADD(curv05%,5)
+  curv06%=ADD(curv05_%,15)
+  curv06_%=ADD(curv06%,5)
+  curv07%=ADD(curv06_%,15)
+  curv07_%=ADD(curv07%,5)
+  curv08%=ADD(curv07_%,15)
+  curv08_%=ADD(curv08%,5)
+  curv09%=ADD(curv08_%,15)
+  curv09_%=ADD(curv09%,5)
+  curv10%=ADD(curv09_%,15)
+  curv10_%=ADD(curv10%,5)
+  curv11%=ADD(curv10_%,15)
+  curv11_%=ADD(curv11%,5)
+  curv12%=ADD(curv11_%,15)
+  curv12_%=ADD(curv12%,5)
+  curv_last%=ADD(curv12_%,100)
+  curv_last_%=ADD(curv_last%,5)
+  '
+  ' Timer events to remove 'change curves'
+  xcurv%=4650
+  xcurv01%=xcurv%
+  xcurv01_%=ADD(xcurv01%,5)
+  xcurv02%=ADD(xcurv01_%,15)
+  xcurv02_%=ADD(xcurv02%,5)
+  xcurv03%=ADD(xcurv02_%,15)
+  xcurv03_%=ADD(xcurv03%,5)
+  xcurv04%=ADD(xcurv03_%,15)
+  xcurv04_%=ADD(xcurv04%,5)
+  xcurv05%=ADD(xcurv04_%,15)
+  xcurv05_%=ADD(xcurv05%,5)
+  xcurv06%=ADD(xcurv05_%,15)
+  xcurv06_%=ADD(xcurv06%,5)
+  xcurv07%=ADD(xcurv06_%,15)
+  xcurv07_%=ADD(xcurv07%,5)
+  xcurv08%=ADD(xcurv07_%,15)
+  xcurv08_%=ADD(xcurv08%,5)
+  xcurv09%=ADD(xcurv08_%,15)
+  xcurv09_%=ADD(xcurv09%,5)
+  xcurv10%=ADD(xcurv09_%,15)
+  xcurv10_%=ADD(xcurv10%,5)
+  xcurv11%=ADD(xcurv10_%,15)
+  xcurv11_%=ADD(xcurv11%,5)
+  xcurv12%=ADD(xcurv11_%,15)
+  xcurv12_%=ADD(xcurv12%,5)
+  '
+  ' Timer events for last message
+  last%=5000
+  last01%=last%
+  last01_%=ADD(last01%,5)
+  last02%=ADD(last01_%,15)
+  last02_%=ADD(last02%,5)
+  last03%=ADD(last02_%,15)
+  last03_%=ADD(last03%,5)
+  last04%=ADD(last03_%,15)
+  last04_%=ADD(last04%,5)
+  last05%=ADD(last04_%,15)
+  last05_%=ADD(last05%,5)
+  last06%=ADD(last05_%,15)
+  last06_%=ADD(last06%,5)
+  last07%=ADD(last06_%,15)
+  last07_%=ADD(last07%,5)
+  last08%=ADD(last07_%,15)
+  last08_%=ADD(last08%,5)
+  last09%=ADD(last08_%,15)
+  last09_%=ADD(last09%,5)
+  last10%=ADD(last09_%,15)
+  last10_%=ADD(last10%,5)
+  last11%=ADD(last10_%,15)
+  last11_%=ADD(last11%,5)
+  last12%=ADD(last11_%,15)
+  last12_%=ADD(last12%,5)
+  '
+  REPEAT
+    scancode|=BYTE{&HFFFFFC02}
+    timer2%=TIMER-timer1%
+    '
+    SELECT timer2%
+    CASE  TO 235
+      SELECT timer2%
+      CASE  TO 5
+        BMOVE ADD(i.powered%,1760),XBIOS(2),160
+      CASE 20 TO 25
+        BMOVE ADD(i.powered%,1600),XBIOS(2),320
+      CASE 40 TO 45
+        BMOVE ADD(i.powered%,1440),XBIOS(2),480
+      CASE 60 TO 65
+        BMOVE ADD(i.powered%,1280),XBIOS(2),640
+      CASE 80 TO 85
+        BMOVE ADD(i.powered%,1120),XBIOS(2),800
+      CASE 100 TO 105
+        BMOVE ADD(i.powered%,960),XBIOS(2),960
+      CASE 120 TO 125
+        BMOVE ADD(i.powered%,800),XBIOS(2),1120
+      CASE 140 TO 145
+        BMOVE ADD(i.powered%,640),XBIOS(2),1280
+      CASE 160 TO 165
+        BMOVE ADD(i.powered%,480),XBIOS(2),1440
+      CASE 180 TO 185
+        BMOVE ADD(i.powered%,320),XBIOS(2),1600
+      CASE 200 TO 205
+        BMOVE ADD(i.powered%,160),XBIOS(2),1760
+      CASE 220 TO 225
+        BMOVE i.powered%,XBIOS(2),1920
+      ENDSELECT
+      '
+    CASE 300 TO
+      ' Display new picture on lower border (add more colors)
+      '
+      SELECT timer2%
+      CASE col% TO col_last_%
+        SELECT timer2%
+        CASE col01% TO col01_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),31840),160
+        CASE col02% TO col02_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),31680),320
+        CASE col03% TO col03_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),31520),480
+        CASE col04% TO col04_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),31360),640
+        CASE col05% TO col05_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),31200),800
+        CASE col06% TO col06_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),31040),960
+        CASE col07% TO col07_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),30880),1120
+        CASE col08% TO col08_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),30720),1280
+        CASE col09% TO col09_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),30560),1440
+        CASE col10% TO col10_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),30400),1600
+        CASE col11% TO col11_%
+          BMOVE i.addcolors%,ADD(XBIOS(2),30240),1760
+        CASE col12% TO col12%
+          BMOVE i.addcolors%,ADD(XBIOS(2),30080),1920
+        CASE col_last% TO col_last_%
+          complexity|=1
+          current_palette%=V:my_palette1$
+          go_back|=0
+        ENDSELECT
+        '
+      CASE curv% TO curv_last_%
+        ' Display new picture on lower border (new curve)
+        '
+        SELECT timer2%
+        CASE curv01% TO curv01_%
+          BMOVE i.curves%,ADD(XBIOS(2),31840),160
+        CASE curv02% TO curv02_%
+          BMOVE i.curves%,ADD(XBIOS(2),31680),320
+        CASE curv03% TO curv03_%
+          BMOVE i.curves%,ADD(XBIOS(2),31520),480
+        CASE curv04% TO curv04_%
+          BMOVE i.curves%,ADD(XBIOS(2),31360),640
+        CASE curv05% TO curv05_%
+          BMOVE i.curves%,ADD(XBIOS(2),31200),800
+        CASE curv06% TO curv06_%
+          BMOVE i.curves%,ADD(XBIOS(2),31040),960
+        CASE curv07% TO curv07_%
+          BMOVE i.curves%,ADD(XBIOS(2),30880),1120
+        CASE curv08% TO curv08_%
+          BMOVE i.curves%,ADD(XBIOS(2),30720),1280
+        CASE curv09% TO curv09_%
+          BMOVE i.curves%,ADD(XBIOS(2),30560),1440
+        CASE curv10% TO curv10_%
+          BMOVE i.curves%,ADD(XBIOS(2),30400),1600
+        CASE curv11% TO curv11_%
+          BMOVE i.curves%,ADD(XBIOS(2),30240),1760
+        CASE curv12% TO curv12_%
+          BMOVE i.curves%,ADD(XBIOS(2),30080),1920
+        CASE curv_last% TO curv_last_%
+          pn|=9
+          pp|=19
+          param_ud|=46
+        ENDSELECT
+        '
+      CASE xcol% TO xcol12_%
+        ' Remove the picture on lower border
+        '
+        SELECT timer2%
+        CASE xcol01% TO xcol01_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30080),160
+        CASE xcol02% TO xcol02_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30240),160
+        CASE xcol03% TO xcol03_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30400),160
+        CASE xcol04% TO xcol04_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30560),160
+        CASE xcol05% TO xcol05_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30720),160
+        CASE xcol06% TO xcol06_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30880),160
+        CASE xcol07% TO xcol07_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31040),160
+        CASE xcol08% TO xcol08_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31200),160
+        CASE xcol09% TO xcol09_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31360),160
+        CASE xcol10% TO xcol10_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31520),160
+        CASE xcol11% TO xcol11_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31680),160
+        CASE xcol12% TO xcol12_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31840),160
+        ENDSELECT
+        '
+      CASE xcol% TO xcol12_%,xcurv% TO xcurv12_%
+        ' Remove the picture on lower border
+        '
+        SELECT timer2%
+        CASE xcol01% TO xcol01_%,xcurv01% TO xcurv01_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30080),160
+        CASE xcol02% TO xcol02_%,xcurv02% TO xcurv02_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30240),160
+        CASE xcol03% TO xcol03_%,xcurv03% TO xcurv03_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30400),160
+        CASE xcol04% TO xcol04_%,xcurv04% TO xcurv04_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30560),160
+        CASE xcol05% TO xcol05_%,xcurv05% TO xcurv05_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30720),160
+        CASE xcol06% TO xcol06_%,xcurv06% TO xcurv06_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),30880),160
+        CASE xcol07% TO xcol07_%,xcurv07% TO xcurv07_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31040),160
+        CASE xcol08% TO xcol08_%,xcurv08% TO xcurv08_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31200),160
+        CASE xcol09% TO xcol09_%,xcurv09% TO xcurv09_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31360),160
+        CASE xcol10% TO xcol10_%,xcurv10% TO xcurv10_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31520),160
+        CASE xcol11% TO xcol11_%,xcurv11% TO xcurv11_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31680),160
+        CASE xcol12% TO xcol12_%,xcurv12% TO xcurv12_%
+          BMOVE g.empty_line%,ADD(XBIOS(2),31840),160
+        ENDSELECT
+        '
+      CASE last% TO
+        ' Display new picture on lower border (function keys)
+        '
+        SELECT timer2%
+        CASE last01% TO last01_%
+          BMOVE i.function%,ADD(XBIOS(2),31840),160
+        CASE last02% TO last02_%
+          BMOVE i.function%,ADD(XBIOS(2),31680),320
+        CASE last03% TO last03_%
+          BMOVE i.function%,ADD(XBIOS(2),31520),480
+        CASE last04% TO last04_%
+          BMOVE i.function%,ADD(XBIOS(2),31360),640
+        CASE last05% TO last05_%
+          BMOVE i.function%,ADD(XBIOS(2),31200),800
+        CASE last06% TO last06_%
+          BMOVE i.function%,ADD(XBIOS(2),31040),960
+        CASE last07% TO last07_%
+          BMOVE i.function%,ADD(XBIOS(2),30880),1120
+        CASE last08% TO last08_%
+          BMOVE i.function%,ADD(XBIOS(2),30720),1280
+        CASE last09% TO last09_%
+          BMOVE i.function%,ADD(XBIOS(2),30560),1440
+        CASE last10% TO last10_%
+          BMOVE i.function%,ADD(XBIOS(2),30400),1600
+        CASE last11% TO last11_%
+          BMOVE i.function%,ADD(XBIOS(2),30240),1760
+        CASE last12% TO last12_%
+          BMOVE i.function%,ADD(XBIOS(2),30080),1920
+        ENDSELECT
+      ENDSELECT
+      '
+      ' Space pressed -> transition
+      IF timer3%>0
+        timer4%=TIMER-timer3%
+        SELECT timer4%
+        CASE  TO 5
+          BMOVE g.empty_line%,ADD(XBIOS(2),1760),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),30080),160
+          VSYNC
+          CARD{&HFFFF8240}=&H203
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 20 TO 25
+          BMOVE g.empty_line%,ADD(XBIOS(2),1600),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),30240),160
+          VSYNC
+          CARD{&HFFFF8240}=&H304
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 40 TO 45
+          BMOVE g.empty_line%,ADD(XBIOS(2),1440),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),30400),160
+          VSYNC
+          CARD{&HFFFF8240}=&H405
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 60 TO 65
+          BMOVE g.empty_line%,ADD(XBIOS(2),1280),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),30560),160
+          VSYNC
+          CARD{&HFFFF8240}=&H506
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 80 TO 85
+          BMOVE g.empty_line%,ADD(XBIOS(2),1120),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),30720),160
+          VSYNC
+          CARD{&HFFFF8240}=&H607
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 100 TO 105
+          BMOVE g.empty_line%,ADD(XBIOS(2),960),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),30880),160
+          VSYNC
+          CARD{&HFFFF8240}=&H717
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 120 TO 125
+          BMOVE g.empty_line%,ADD(XBIOS(2),800),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),31040),160
+          VSYNC
+          CARD{&HFFFF8240}=&H727
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 140 TO 145
+          BMOVE g.empty_line%,ADD(XBIOS(2),640),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),31200),160
+          VSYNC
+          CARD{&HFFFF8240}=&H737
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 160 TO 165
+          BMOVE g.empty_line%,ADD(XBIOS(2),480),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),31360),160
+          VSYNC
+          CARD{&HFFFF8240}=&H747
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 180 TO 185
+          BMOVE g.empty_line%,ADD(XBIOS(2),320),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),31520),160
+          VSYNC
+          CARD{&HFFFF8240}=&H757
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 200 TO 205
+          BMOVE g.empty_line%,ADD(XBIOS(2),160),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),31680),160
+          VSYNC
+          CARD{&HFFFF8240}=&H767
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 220 TO 225
+          BMOVE g.empty_line%,XBIOS(2),160
+          BMOVE g.empty_line%,ADD(XBIOS(2),31840),160
+          VSYNC
+          CARD{&HFFFF8240}=&H777
+          synchro!=TRUE
+          IF synchro!
+            synchro!=FALSE
+          ENDIF
+        CASE 240 TO
+          byebye!=TRUE
+        ENDSELECT
+      ENDIF
+      '
+      @gloky
+      '
+      SELECT scancode|
+      CASE 57       ! espace
+        ' Transition
+        IF timer3%=0
+          timer3%=TIMER
+        ENDIF
+      CASE 74       ! -
+        complexity|=0
+      CASE 78       ! +
+        complexity|=1
+      CASE 59       ! F1
+        pn|=9
+        pp|=19
+        param_ud|=46
+      CASE 60       ! F2
+        pn|=2
+        pp|=20
+        param_ud|=43
+      CASE 61       ! F3
+        pn|=4
+        pp|=5
+        param_ud|=39
+      CASE 62       ! F4
+        pn|=1
+        pp|=20
+        param_ud|=24
+      CASE 63       ! F5
+        pn|=2
+        pp|=8
+        param_ud|=3
+      CASE 64       ! F6
+        pn|=9
+        pp|=19
+        param_ud|=45
+      CASE 56 ! Alt
+        CARD{&HFFFF8240}=&H304
+        VSYNC
+        CARD{&HFFFF8240}=&H102
+      CASE 109      ! 1
+        current_palette%=V:my_palette1$
+        go_back|=0
+      CASE 110      ! 2
+        current_palette%=V:my_palette2$
+        go_back|=0
+      CASE 111      ! 3
+        current_palette%=V:palette_mono$
+        go_back|=1
+      ENDSELECT
+    ENDSELECT
+    '
+  UNTIL byebye!
+RETURN
+> PROCEDURE variables
+  max_col&=15
+  buffer$=STRING$(1200,0)
+  buffer%=V:buffer$
+  '
+  ' dot control
+  '
+  dot_buffer&=996
+  dot_1&=dot_buffer&-4
+  dot_2&=dot_buffer&-2
+  '
+  pn|=2
+  pp|=8
+  param_ud|=3
+  param_u%=0
+  go_back|=1                            ! go back cycling to color 1?
+  complexity|=0                         ! draw simple/complex curves
+  current_palette%=V:palette_mono$
+RETURN
+> PROCEDURE init_palettes
+  palette_mono$=STRING$(64,0)
+  ad%=V:palette_mono$
+  FOR f=0 TO 15
+    t=&H106
+    DPOKE ad%+f*2,t
+    DPOKE ad%+32+f*2,t
+  NEXT f
+  '
+  my_palette1$=STRING$(64,0)
+  ad%=V:my_palette1$
+  FOR f=0 TO 15
+    IF f>7
+      t=(f-7)*&H101+INT((f-4)*0.7)*&H10
+    ELSE
+      t=&H1*f+(7-f)*&H100
+    ENDIF
+    DPOKE ad%+f*2,t
+    DPOKE ad%+32+f*2,t
+  NEXT f
+  '
+  my_palette2$=STRING$(64,0)
+  ad%=V:my_palette2$
+  FOR f=0 TO 15
+    IF f>7
+      t=(f-7)*&H101+INT((f-4)*0.7)*&H101
+    ELSE
+      t=&H1*f+(7-f)*&H101
+    ENDIF
+    DPOKE ad%+f*2,t
+    DPOKE ad%+32+f*2,t
+  NEXT f
+  '
+  ' color 0
+  CARD{&HFFFF8240}=&H102
+  ' color 15
+  CARD{&HFFFF825E}=&H204
+RETURN
+> PROCEDURE light(a%,b%,c|)               ! draw dots
+  ' draw simple or more complex curves
+  IF complexity|=1
+    ADD param_u%,param_ud|
+    IF param_u%>2000
+      param_u%=0
+    ENDIF
+  ENDIF
+  '
+  ' color cycling according to palette
+  IF go_back|=1
+    IF c|=15
+      c|=1
+    ENDIF
+  ENDIF
+  '
+  PSET a%,b%,c|
+  PSET 319-a%,b%,c|
+  PSET a%,199-b%,c|
+  PSET 319-a%,199-b%,c|
+RETURN
+> PROCEDURE fading
+  VSYNC
+  CARD{&HFFFF8240}=&H777
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H767
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H757
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H747
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H737
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H727
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H717
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H607
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H506
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H405
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H304
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H203
+  PAUSE 2
+  VSYNC
+  CARD{&HFFFF8240}=&H102
+RETURN
+> PROCEDURE gloky                         ! ze routine by M„ster Gl”ky
+  ADD i,0.125
+  x=COSQ(i*4)*COSQ(i*3)*(100+ABS(-50+(i*2+20) MOD 100))+140
+  y=SINQ(i+20)*SINQ(i*2)*(20+ABS(-50+(i*2) MOD 100))+100
+  LONG{buffer%}=ROL(INT(ABS(COSQ(param_u%)*ABS(-20+((param_u%*180+pp|)/pn|) MOD 40)+x)),16)+INT(ABS(SINQ(param_u%)*ABS(-20+(param_u%*180/pn|) MOD 40)+y))
+  BMOVE buffer%,buffer%+4,dot_buffer&
+  INC jj
+  IF jj=8
+    jj=1
+    j=(j+1) AND max_col&
+  ENDIF
+  light(DPEEK(buffer%),DPEEK(buffer%+2),MIN(max_col&,1+j))
+  light(DPEEK(buffer%+dot_1&) MOD 320,DPEEK(buffer%+dot_2&) MOD 200,0)
+  BMOVE current_palette%+(INT(max_col&-j)*2),&HFFFF8242,28
+RETURN
+'
+' ***** System procedures *****
+'
+> PROCEDURE sys_init
+  OPTION BASE 0
+  '
+  ' Variables
+  g.reserve%=100000
+  g.old_phy%=XBIOS(2)
+  g.old_log%=XBIOS(3)
+  g.old_rez&=XBIOS(4)
+  g.new_rez&=0
+  g.old_palette$=SPACE$(32)
+  g.keyclick&=PEEK(&H484)
+  g.empty_line$=SPACE$(160)
+  g.empty_line%=VARPTR(g.empty_line$)
+  DIM g.registers%(16)
+  '
+  RESERVE g.reserve%
+  CLS
+  HIDEM
+  OUT 4,18
+  ~XBIOS(5,L:-1,L:-1,W:g.new_rez&)
+  g.super%=GEMDOS(32,L:0)
+  BMOVE &HFFFF8240,V:g.old_palette$,32
+  SPOKE &H484,g.keyclick& AND NOT 1
+  BMOVE XBIOS(2),g.empty_line%,160
+RETURN
+> PROCEDURE sys_restore
+  SPOKE &H484,g.keyclick&
+  BMOVE V:g.old_palette$,&HFFFF8240,32
+  ~GEMDOS(32,L:g.super%)
+  ~XBIOS(5,L:g.old_log%,L:g.old_phy%,W:g.old_rez&)
+  OUT 4,8
+  SHOWM
+  RESERVE
+  CLS
+  EDIT
+RETURN
+> PROCEDURE sndh_play
+  ' Address of the zik
+  g.registers%(14)=i.music%
+  '
+  ' Frequency
+  g.registers%(7)=50
+  '
+  RCALL i.sndhplay%+28,g.registers%()
+RETURN
+> PROCEDURE sndh_stop
+  RCALL i.sndhplay%+32,g.registers%()
+RETURN
